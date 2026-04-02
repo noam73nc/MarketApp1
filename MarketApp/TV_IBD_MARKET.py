@@ -14,6 +14,16 @@ from tradingview_screener import Query, Column
 # ==========================================
 DATA_DIR = "data"
 
+def find_file_robust(directory, filename_target):
+    if not os.path.exists(directory):
+        return None
+    files = os.listdir(directory)
+    target = filename_target.lower().strip()
+    for f in files:
+        if f.lower().strip() == target:
+            return os.path.join(directory, f)
+    return None
+
 # ==========================================
 # ⚙️ הגדרות עמוד ותצורה
 # ==========================================
