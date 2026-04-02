@@ -8,7 +8,9 @@ from datetime import datetime
 import yfinance as yf
 from streamlit_lightweight_charts import renderLightweightCharts
 
-DATA_DIR = "data"
+# הגדרת נתיב אבסולוטי כדי ש-Streamlit לא ילך לאיבוד בתתי-תיקיות
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # ==========================================
 # ⚙️ הגדרות עמוד ותצורה ו-CSS מותאם
