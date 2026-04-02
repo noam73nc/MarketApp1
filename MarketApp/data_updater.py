@@ -139,8 +139,13 @@ def update_market_data():
                     'Spon Rating', 'Ind Grp RS', 'Industry Group Rank', 'Rank_Improvement', 'Industry Group Name']
             df_raw = pd.merge(df_raw, df_ibd[[c for c in icols if c in df_ibd.columns]], on='Symbol', how='left')
         
-        # RS Backfill
+        # RS Backfill - מתוקן וחסין קריסות
         if 'Perf.Y' in df_raw.columns:
+            # אם העמודה לא קיימת בכלל (כי קובץ IBD חסר), ניצור אותה ריקה
+            if 'RS Rating' not in df_raw.columns:
+                df_raw['RS Rating'] = np.nan
+                
+            # כעת נמלא את החסר (או את הכל אם היא הייתה ריקה)
             df_raw['RS Rating'] = df_raw['RS Rating'].fillna(df_raw['Perf.Y'].rank(pct=True)*99).astype(int)
 
         # Excel Alerts Backfill
