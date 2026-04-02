@@ -230,11 +230,15 @@ else:
 # --- MACRO ---
 st.markdown("---")
 st.markdown("### 🌊 MACRO: SECTOR VELOCITY")
+
 m1, m2 = st.columns(2)
 with m1:
     if not group_df.empty:
         st.caption("🏆 LEADERS: TOP 40 IBD GROUPS")
         st.dataframe(group_df.sort_values('Rank this Wk').head(40), use_container_width=True, hide_index=True, height=350)
+    else:
+        st.warning("⚠️ טבלת Macro מוסתרת כי הקובץ 'Group Ranking.csv' לא נמצא בתיקיית הנתונים בגיטהאב.")
+
 with m2:
     if not group_df.empty and 'Industry Group Name' in df_raw.columns:
         top_j = group_df.sort_values('Rank_Improvement', ascending=False).head(20)
