@@ -2,7 +2,7 @@ name: Update Market Data
 
 on:
   schedule:
-    # מריץ כל 30 דקות.
+    # מריץ כל 15 דקות.
     - cron: '*/30 * * * *'
   workflow_dispatch: # מאפשר הרצה ידנית
 
