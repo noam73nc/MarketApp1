@@ -10,11 +10,20 @@ from streamlit_lightweight_charts import renderLightweightCharts
 from tradingview_screener import Query, Column
 
 # ==========================================
-# 📁 הגדרת נתיב נתונים ראשי (לשנות רק כאן!)
+# 📁 הגדרת נתיב נתונים (מותאם לענן ולמקומי)
 # ==========================================
-# לענן (GitHub/Streamlit) נשתמש בנתיב היחסי "data"
-# להרצה מקומית במחשב, אפשר לשנות בחזרה ל- r"C:\MarketScanner"
 DATA_DIR = "data"
+
+# פונקציית עזר משופרת למציאת קובץ - מתעלמת מרווחים ואותיות גדולות
+def find_file_robust(directory, filename_target):
+    if not os.path.exists(directory):
+        return None
+    files = os.listdir(directory)
+    target = filename_target.lower().strip()
+    for f in files:
+        if f.lower().strip() == target:
+            return os.path.join(directory, f)
+    return None
 
 # ==========================================
 # ⚙️ הגדרות עמוד ותצורה - Terminal Mode
@@ -39,14 +48,34 @@ st.markdown("""
     .counter-badge { color: #2EA043; font-weight: bold; font-size: 0.9em; }
     .stDownloadButton > button { background-color: #238636; color: white; border: none; width: 100%; }
     .stDownloadButton > button:hover { background-color: #2EA043; border: none; }
-    /* עיצוב כפתור הרענון */
     .refresh-btn > button { background-color: #1F6FEB; color: white; border: 1px solid #388BFD; font-weight: bold; }
     .refresh-btn > button:hover { background-color: #388BFD; border-color: #58A6FF; }
+    .diagnostic-box { background-color: #30363D; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #D2A8FF;}
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 📡 טעינת נתונים משולבת + מנוע תבניות חי (LIVE PATTERNS)
+# 🛠️ פאנל מצב רנטגן (אבחון תקלות בענן)
+# ==========================================
+st.markdown('<div class="diagnostic-box">', unsafe_allow_html=True)
+st.markdown("#### 🛠️ מצב אבחון תקלות (X-Ray)")
+if not os.path.exists(DATA_DIR):
+    st.error(f"❌ שגיאה קריטית: התיקייה '{DATA_DIR}' לא קיימת בשרת! ודא שיצרת תיקייה בשם data בשורש הפרויקט בגיטהאב.")
+else:
+    files_found = os.listdir(DATA_DIR)
+    st.info(f"📁 התיקייה קיימת. קבצים שהשרת רואה בתוכה כרגע: {files_found}")
+    
+    ibd_f = find_file_robust(DATA_DIR, "IBD.csv")
+    if ibd_f: st.success(f"✅ נמצא קובץ IBD: {ibd_f}")
+    else: st.error("❌ לא נמצא קובץ ששמו IBD.csv")
+    
+    grp_f = find_file_robust(DATA_DIR, "Group Ranking.csv")
+    if grp_f: st.success(f"✅ נמצא קובץ Group Ranking: {grp_f}")
+    else: st.error("❌ לא נמצא קובץ ששמו Group Ranking.csv")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================
+# 📡 טעינת נתונים משולבת + מנוע תבניות חי
 # ==========================================
 @st.cache_data(ttl=1800, show_spinner=False)
 def load_hybrid_data():
@@ -86,56 +115,32 @@ def load_hybrid_data():
 
         def generate_live_patterns(row):
             badges = []
-            price = row.get('Price', 0)
-            open_ = row.get('open', 0)
-            high = row.get('high', 0)
-            low = row.get('low', 0)
-            rvol = row.get('Rel_Volume', 1)
-            atr = row.get('ATR', 0)
-            adr = row.get('ADR_Pct', 0)
-            sma10 = row.get('SMA10', 0)
-            sma20 = row.get('SMA20', 0)
-            sma50 = row.get('SMA50', 0)
-            sma200 = row.get('SMA200', 0)
-            spread = row.get('Spread', 0)
-            close_pos = row.get('Close_Pos', 0.5)
+            price, op, hi, lo = row.get('Price', 0), row.get('open', 0), row.get('high', 0), row.get('low', 0)
+            rvol, atr, adr = row.get('Rel_Volume', 1), row.get('ATR', 0), row.get('ADR_Pct', 0)
+            sma10, sma20, sma50, sma200 = row.get('SMA10', 0), row.get('SMA20', 0), row.get('SMA50', 0), row.get('SMA200', 0)
+            spread, close_pos = row.get('Spread', 0), row.get('Close_Pos', 0.5)
             
             perf_3m = row.get('Perf.3M', 0)
-            if pd.isna(perf_3m): perf_3m = 0
-            else: perf_3m = perf_3m / 100.0
+            perf_3m = (perf_3m / 100.0) if not pd.isna(perf_3m) else 0
 
             hi52 = row.get('price_52_week_high', 0)
             hi52_pct = (price - hi52) / hi52 if hi52 and hi52 > 0 else -99
 
-            if price <= 0 or pd.isna(price):
-                return ""
+            if price <= 0: return ""
 
-            if sma50 > 0 and low < sma50 < price: badges.append("U&R(50) 🛡️")
-            if sma20 > 0 and low < sma20 < price: badges.append("U&R(21) 🛡️")
-            if sma50 > 0:
-                dist_50 = (price - sma50) / sma50
-                if 0.0 <= dist_50 <= 0.03 and price > (sma200 if sma200 > 0 else 0):
-                    badges.append("Bounce50 🏀")
-            if sma20 > 0 and sma50 > 0:
-                dist_20 = (price - sma20) / sma20
-                if 0.0 <= dist_20 <= 0.035 and sma20 > sma50:
-                    badges.append("Ride20 🏄")
-            if rvol > 1.5 and price > open_ and close_pos > 0.7:
-                badges.append("HVC 🚀")
-            if rvol > 1.2 and adr > 0 and (spread / low * 100 if low > 0 else 0) > adr and close_pos < 0.4:
-                badges.append("SQUAT 🏋️")
-            if atr > 0 and spread < (atr * 0.7) and close_pos > 0.5:
-                badges.append("ID 🕯️")
-            if perf_3m > 0.90 and hi52_pct >= -0.20:
-                badges.append("HTF 🚩")
-            if adr > 0 and (spread / low * 100 if low > 0 else adr) < (adr * 0.6) and rvol < 1.0:
-                badges.append("Tight/VCP 🤏")
-            if hi52_pct >= -0.02:
-                badges.append("52W High 👑")
-            if sma10 > 0 and (price / sma10 - 1) > 0.15:
-                badges.append("EXT ⚠️")
-
-            move_pct = spread / low * 100 if low > 0 else 0
+            if sma50 > 0 and lo < sma50 < price: badges.append("U&R(50) 🛡️")
+            if sma20 > 0 and lo < sma20 < price: badges.append("U&R(21) 🛡️")
+            if sma50 > 0 and (0.0 <= (price - sma50) / sma50 <= 0.03) and price > sma200: badges.append("Bounce50 🏀")
+            if sma20 > 0 and sma50 > 0 and (0.0 <= (price - sma20) / sma20 <= 0.035) and sma20 > sma50: badges.append("Ride20 🏄")
+            if rvol > 1.5 and price > op and close_pos > 0.7: badges.append("HVC 🚀")
+            if rvol > 1.2 and adr > 0 and (spread / lo * 100 if lo > 0 else 0) > adr and close_pos < 0.4: badges.append("SQUAT 🏋️")
+            if atr > 0 and spread < (atr * 0.7) and close_pos > 0.5: badges.append("ID 🕯️")
+            if perf_3m > 0.90 and hi52_pct >= -0.20: badges.append("HTF 🚩")
+            if adr > 0 and (spread / lo * 100 if lo > 0 else adr) < (adr * 0.6) and rvol < 1.0: badges.append("Tight/VCP 🤏")
+            if hi52_pct >= -0.02: badges.append("52W High 👑")
+            if sma10 > 0 and (price / sma10 - 1) > 0.15: badges.append("EXT ⚠️")
+            
+            move_pct = spread / lo * 100 if lo > 0 else 0
             adr_ratio = move_pct / adr if adr > 0 else 0
             if 0.8 <= adr_ratio <= 1.2: badges.append("1 ADR 📏")
             elif 1.5 <= adr_ratio <= 2.5: badges.append("2 ADR 🔥")
@@ -144,22 +149,16 @@ def load_hybrid_data():
 
         df_raw['Pattern_Badges'] = df_raw.apply(generate_live_patterns, axis=1)
 
-        # --- 3. זיהוי מתקדם ואמיתי של Weinstein Stages ---
-        p = df_raw['Price']
-        ma50 = df_raw['SMA50']
-        ma200 = df_raw['SMA200']
-        hi52 = df_raw['price_52_week_high']
-        lo52 = df_raw['price_52_week_low']
-        
+        # --- 3. זיהוי Weinstein Stages ---
+        p, ma50, ma200 = df_raw['Price'], df_raw['SMA50'], df_raw['SMA200']
+        hi52, lo52 = df_raw['price_52_week_high'], df_raw['price_52_week_low']
         df_raw['52W_High_Pct'] = np.where(hi52 > 0, (p - hi52) / hi52, -99)
         df_raw['52W_Low_Pct'] = np.where(lo52 > 0, (p - lo52) / lo52, 0)
-        hi52_pct = df_raw['52W_High_Pct']
-        lo52_pct = df_raw['52W_Low_Pct']
-
-        cond_stage2 = (p > ma50) & (ma50 > ma200) & (lo52_pct >= 0.25) & (hi52_pct >= -0.25)
-        cond_stage4 = (p < ma50) & (ma50 < ma200) & (hi52_pct < -0.25)
-        cond_stage3 = (~cond_stage2) & (~cond_stage4) & (hi52_pct >= -0.20) & (p < ma50)
-        cond_stage1 = (~cond_stage2) & (~cond_stage4) & (~cond_stage3) & (hi52_pct < -0.20) & (abs(p - ma200)/ma200 < 0.10)
+        
+        cond_stage2 = (p > ma50) & (ma50 > ma200) & (df_raw['52W_Low_Pct'] >= 0.25) & (df_raw['52W_High_Pct'] >= -0.25)
+        cond_stage4 = (p < ma50) & (ma50 < ma200) & (df_raw['52W_High_Pct'] < -0.25)
+        cond_stage3 = (~cond_stage2) & (~cond_stage4) & (df_raw['52W_High_Pct'] >= -0.20) & (p < ma50)
+        cond_stage1 = (~cond_stage2) & (~cond_stage4) & (~cond_stage3) & (df_raw['52W_High_Pct'] < -0.20) & (abs(p - ma200)/ma200 < 0.10)
 
         df_raw['Weinstein_Stage'] = np.select(
             [cond_stage2, cond_stage3, cond_stage4, cond_stage1],
@@ -169,36 +168,37 @@ def load_hybrid_data():
 
         # --- 4. שילוב קובץ IBD ---
         df_ibd = pd.DataFrame()
-        ibd_path = os.path.join(DATA_DIR, "IBD.csv")
-        if not os.path.exists(ibd_path): ibd_path = os.path.join(DATA_DIR, "IBD.CSV")
-        
-        if os.path.exists(ibd_path):
-            df_ibd = pd.read_csv(ibd_path, encoding='utf-8-sig')
-            df_ibd.columns = df_ibd.columns.str.strip()
-            for c in ['RS Rating', 'Comp. Rating', 'EPS Rating', 'Industry Group Rank']:
-                if c in df_ibd.columns:
-                    df_ibd[c] = pd.to_numeric(df_ibd[c].astype(str).str.replace('%','').str.replace(',',''), errors='coerce')
+        ibd_path = find_file_robust(DATA_DIR, "IBD.csv")
+        if ibd_path:
+            try:
+                df_ibd = pd.read_csv(ibd_path, encoding='utf-8-sig')
+                df_ibd.columns = df_ibd.columns.str.strip()
+                for c in ['RS Rating', 'Comp. Rating', 'EPS Rating', 'Industry Group Rank']:
+                    if c in df_ibd.columns:
+                        df_ibd[c] = pd.to_numeric(df_ibd[c].astype(str).str.replace('%','').str.replace(',',''), errors='coerce')
+            except Exception as e: print(f"IBD load error: {e}")
 
         # --- 5. שילוב קובץ Group Ranking ---
-        group_path = os.path.join(DATA_DIR, "Group Ranking.csv")
+        group_path = find_file_robust(DATA_DIR, "Group Ranking.csv")
         group_df = pd.DataFrame()
-        if os.path.exists(group_path):
-            group_df = pd.read_csv(group_path, encoding='utf-8-sig')
-            group_df.columns = group_df.columns.str.strip()
-            cols = list(group_df.columns)
-            if len(cols) >= 2:
-                cols[0] = 'Rank this Wk'
-                cols[1] = '3 Wks ago'
-                for i in range(2, len(cols)):
-                    if 'Composite' in str(cols[i]): cols[i] = 'Group Composite Rating'
-                    elif 'Industry' in str(cols[i]) or 'Name' in str(cols[i]): cols[i] = 'Industry Group Name'
-                group_df.columns = cols
-            
-            group_df['Rank this Wk'] = pd.to_numeric(group_df['Rank this Wk'], errors='coerce')
-            group_df['3 Wks ago'] = pd.to_numeric(group_df['3 Wks ago'], errors='coerce')
-            group_df['Rank_Improvement'] = group_df['3 Wks ago'] - group_df['Rank this Wk']
+        if group_path:
+            try:
+                group_df = pd.read_csv(group_path, encoding='utf-8-sig')
+                group_df.columns = group_df.columns.str.strip()
+                cols = list(group_df.columns)
+                if len(cols) >= 2:
+                    cols[0], cols[1] = 'Rank this Wk', '3 Wks ago'
+                    for i in range(2, len(cols)):
+                        if 'Composite' in str(cols[i]): cols[i] = 'Group Composite Rating'
+                        elif 'Industry' in str(cols[i]) or 'Name' in str(cols[i]): cols[i] = 'Industry Group Name'
+                    group_df.columns = cols
+                
+                group_df['Rank this Wk'] = pd.to_numeric(group_df['Rank this Wk'], errors='coerce')
+                group_df['3 Wks ago'] = pd.to_numeric(group_df['3 Wks ago'], errors='coerce')
+                group_df['Rank_Improvement'] = group_df['3 Wks ago'] - group_df['Rank this Wk']
+            except Exception as e: print(f"Group load error: {e}")
 
-        # --- מיזוג IBD ו-Group Ranking לתוך TV ---
+        # --- מיזוג נתונים ---
         if not df_ibd.empty and not group_df.empty:
             df_ibd = pd.merge(df_ibd, group_df[['Rank this Wk', 'Rank_Improvement', 'Industry Group Name']], 
                               left_on='Industry Group Rank', right_on='Rank this Wk', how='left')
@@ -219,10 +219,9 @@ def load_hybrid_data():
             smart_rs = df_raw['Perf.Y'].rank(pct=True) * 99
             df_raw['RS Rating'] = df_raw['RS Rating'].fillna(smart_rs).astype(int)
 
-        # --- 6. משיכת Alerts שאינם בזמן אמת מהאקסל (Earnings/Kinetic) ---
+        # --- 6. משיכת נתוני אקסל (Earnings/Kinetic) ---
         excel_pattern = os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx")
         excel_files = glob.glob(excel_pattern)
-        
         if excel_files:
             latest_excel = max(excel_files, key=os.path.getmtime)
             try:
@@ -230,8 +229,7 @@ def load_hybrid_data():
                 excel_cols = ['Symbol', 'Earnings_Alert', 'Kinetic_Slope', 'VDU_Alert']
                 excel_cols = [c for c in excel_cols if c in df_excel.columns]
                 df_raw = pd.merge(df_raw, df_excel[excel_cols], on='Symbol', how='left')
-            except Exception as e:
-                pass
+            except: pass
         
         for c in ['Earnings_Alert', 'Kinetic_Slope', 'VDU_Alert']:
             if c not in df_raw.columns: df_raw[c] = ''
@@ -239,7 +237,7 @@ def load_hybrid_data():
         return df_raw, group_df
 
     except Exception as e:
-        print(f"Error loading hybrid data: {e}")
+        st.error(f"Error: {e}")
         return pd.DataFrame(), pd.DataFrame()
 
 # ==========================================
@@ -251,7 +249,7 @@ with title_col:
 with btn_col:
     st.write("") 
     st.markdown('<div class="refresh-btn">', unsafe_allow_html=True)
-    if st.button("📡 רענן נתוני שוק מ-TV", use_container_width=True):
+    if st.button("📡 רענן נתונים כעת", use_container_width=True):
         load_hybrid_data.clear() 
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
@@ -260,7 +258,7 @@ with st.spinner("סורק תבניות טכניות וממזג נתוני שוק
     df_raw, group_df = load_hybrid_data()
 
 if df_raw.empty:
-    st.error("⚠️ שגיאה בטעינת הנתונים. ודא שתיקיית data מכילה את הקבצים הנדרשים.")
+    st.error("⚠️ שגיאה בטעינת הנתונים. ודא שהקבצים קיימים בתיקייה.")
 else:
     st.toast("✅ הנתונים שולבו והתבניות עודכנו בהצלחה!", icon="🚀")
 
@@ -412,7 +410,7 @@ if not df_raw.empty:
         available_tickers = []
 
     if available_tickers:
-        selected_ticker = st.selectbox("🎯 בחר מניה להצגת גרף אינטראקטיבי (נמשך חי מ-yfinance):", options=available_tickers)
+        selected_ticker = st.selectbox("🎯 בחר מניה להצגת גרף אינטראקטיבי:", options=available_tickers)
 
         if selected_ticker:
             st.markdown(f"<h4 style='text-align: center; color: #2EA043;'>מציג נתוני גרף יומי עבור {selected_ticker}</h4>", unsafe_allow_html=True)
@@ -437,7 +435,6 @@ if not df_raw.empty:
                             op, cl = float(row['Open']), float(row['Close'])
                             
                             candles.append({"time": time_str, "open": op, "high": float(row['High']), "low": float(row['Low']), "close": cl})
-                            
                             vol_color = '#26a69a' if cl >= op else '#ef5350'
                             volume_data.append({"time": time_str, "value": float(row['Volume']), "color": vol_color + '80'})
 
@@ -466,7 +463,7 @@ if not df_raw.empty:
 
                         spacer1, chart_col, spacer2 = st.columns([1, 10, 1])
                         with chart_col:
-                            renderLightweightCharts([{"chart": chartOptions, "series": series_list}], 'advanced_candlestick')
+                            renderLightweightCharts([{"chart": chartOptions, "series": series_list}], 'chart')
                         
                 except Exception as e:
                     st.error(f"שגיאה בטעינת הגרף: {e}")
@@ -484,7 +481,7 @@ if not df_raw.empty:
             st.caption(f"🏆 LEADERS: TOP 40 IBD INDUSTRY GROUPS", unsafe_allow_html=True)
             st.dataframe(top_industries, use_container_width=True, hide_index=True, height=350)
         else:
-            st.info("נתוני Group Ranking חסרים בתיקייה.")
+            st.info("נתוני Group Ranking לא חושבו. בדוק את תיבת ה-X-Ray למעלה.")
 
     with macro_col2:
         if not group_df.empty and 'Rank_Improvement' in df_raw.columns:
@@ -504,6 +501,8 @@ if not df_raw.empty:
                     "RS Rating": st.column_config.ProgressColumn("RS RATING", format="%d", min_value=0, max_value=99)
                 }
             )
+        else:
+            st.info("נתוני הקופצים תלויים בקובץ ה-Group Ranking.")
 
     # ==========================================
     # 📥 ייצוא לאקסל
