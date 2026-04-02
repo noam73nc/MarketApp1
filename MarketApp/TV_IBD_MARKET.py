@@ -29,42 +29,78 @@ def find_file_robust(directory, filename_target):
     return None
 
 # ==========================================
-# ⚙️ הגדרות עמוד ותצורה
+# ⚙️ הגדרות עמוד ותצורה ו-CSS מותאם
 # ==========================================
 st.set_page_config(
     page_title="Terminal :: Hybrid Market",
     page_icon="📟",
     layout="wide",
-    initial_sidebar_state="expanded" # שונה כדי שהדיסקליימר יופיע ברור
+    initial_sidebar_state="expanded" 
 )
 
 st.markdown("""
     <style>
-    .stApp { background-color: #0E1117; }
-    .block-container { padding-top: 1.5rem; padding-bottom: 1.5rem; direction: rtl; max-width: 98%; }
+    /* עיצוב כללי של האפליקציה למראה טרמינל מקצועי */
+    .stApp { background-color: #0d1117; color: #c9d1d9; }
+    .block-container { padding-top: 1rem; padding-bottom: 1.5rem; direction: rtl; max-width: 98%; }
+    
+    /* כותרות */
     h1, h2, h3 { color: #E6EDF3; font-family: 'Consolas', 'Courier New', monospace; text-transform: uppercase; letter-spacing: 1px; }
-    h1 { border-bottom: 2px solid #238636; padding-bottom: 10px; }
+    h1 { border-bottom: 2px solid #238636; padding-bottom: 10px; margin-bottom: 30px; }
+    
+    /* טבלאות */
     .stDataFrame { direction: ltr; }
+    
+    /* שדות קלט מותאמים אישית */
     div[data-baseweb="input"] { background-color: #161B22; border: 1px solid #30363D; border-radius: 4px; }
     div[data-baseweb="select"] > div { background-color: #161B22; border: 1px solid #30363D; }
-    .stDownloadButton > button { background-color: #238636; color: white; border: none; width: 100%; }
-    .stDownloadButton > button:hover { background-color: #2EA043; border: none; }
-    .diagnostic-box { background-color: #161B22; border: 1px solid #30363D; padding: 15px; border-radius: 5px; margin-bottom: 20px;}
+    
+    /* כפתור הורדה למטה */
+    .stDownloadButton > button { background-color: #21262d; border: 1px solid #30363d; color: #c9d1d9; width: 100%; transition: 0.2s; }
+    .stDownloadButton > button:hover { background-color: #30363d; border: 1px solid #8b949e; }
+    
+    /* ==========================================
+       עיצוב כפתור הרענון בסיידבר שיהיה בולט וירוק
+       ========================================== */
+    div[data-testid="stSidebar"] button[kind="primary"] {
+        background-color: #238636 !important;
+        color: white !important;
+        border: 1px solid rgba(240, 246, 252, 0.1) !important;
+        font-weight: bold;
+        padding: 0.75rem !important;
+        font-size: 16px;
+        width: 100%;
+        border-radius: 6px;
+        box-shadow: 0 0 15px rgba(35, 134, 54, 0.2);
+        transition: all 0.2s ease-in-out;
+    }
+    div[data-testid="stSidebar"] button[kind="primary"]:hover {
+        background-color: #2EA043 !important;
+        box-shadow: 0 0 20px rgba(46, 160, 67, 0.6);
+        transform: translateY(-1px);
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# ⚠️ דיסקליימר (מוצג בסיידבר)
+# ⚠️ דיסקליימר מופרד וברור בסיידבר
 # ==========================================
-st.sidebar.warning("""
-**⚠️ דיסקליימר - **
-
-הנתונים המוצגים במערכת זו נמשכים ממקורות צד-שלישי ומוצגים למטרות מידע, מחקר ולימוד בלבד. 
-
-**אין לראות במידע זה בשום צורה כהמלצה, ייעוץ השקעות, תחליף לייעוץ מקצועי, או הצעה לקנייה/מכירה של ניירות ערך.**
-
-המשתמש נושא באחריות המלאה והבלעדית לכל פעולה שיבצע על בסיס הנתונים באפליקציה. המסחר בשוק ההון כרוך בסיכון משמעותי להפסד ההון המושקע.
+st.sidebar.markdown("### מידע משפטי וסיכונים")
+st.sidebar.info("""
+**אין לראות במידע זה המלצה, ייעוץ השקעות, או הצעה לקנייה/מכירה של ניירות ערך.** הנתונים נמשכים ממקורות צד-שלישי. המשתמש נושא באחריות הבלעדית לכל פעולת מסחר.
 """)
+
+st.sidebar.markdown("---")
+
+# כפתור הרענון החדש - מוגדר כ-Primary כדי שה-CSS יתפוס אותו במדויק
+if st.sidebar.button("📡 רענן נתונים מ-TV (Live)", type="primary"):
+    # הוספת התראה חזותית קצרה בעת הלחיצה
+    with st.spinner("מושך נתונים בזמן אמת..."):
+        # הערה: בסביבה מרובת משתמשים אמיתית, פקודה זו מוחקת את המטמון לכולם
+        st.cache_data.clear() 
+    st.rerun()
+
+st.sidebar.markdown("---")
 
 # ==========================================
 # 📡 טעינת נתונים משולבת (TV + IBD + Group Ranking)
@@ -220,16 +256,10 @@ st.title("📟 HYBRID COMMAND CENTER :: TV + IBD")
 
 df_raw, group_df, debug_log = load_hybrid_data()
 
-# Diagnostic
-with st.expander("🔍 מצב אבחון קבצים (X-Ray)"):
-    if os.path.exists(DATA_DIR): st.write(f"קבצים בתיקייה: {os.listdir(DATA_DIR)}")
-    for log in debug_log: st.write(log)
-    if st.button("📡 רענן נתונים ופתח מטמון"):
-        load_hybrid_data.clear()
-        st.rerun()
+# הסרנו את כפתור ה-X-RAY כפי שביקשת.
 
 if df_raw.empty:
-    st.error("⚠️ לא ניתן היה לטעון נתונים.")
+    st.error("⚠️ שגיאה: לא ניתן היה למשוך נתונים מהמקורות. בדוק חיבור לרשת או פנה למנהל המערכת.")
     st.stop()
 
 # --- CORE FILTERS ---
@@ -299,7 +329,7 @@ st.markdown("---")
 st.markdown("### 📈 INTERACTIVE CHARTING")
 tks = sorted(df_filtered['Symbol'].dropna().unique())
 if tks:
-    sel_t = st.selectbox("🎯 בחר מניה:", tks)
+    sel_t = st.selectbox("🎯 בחר מניה לעומק:", tks)
     td = yf.download(sel_t, period="1y", interval="1d", progress=False)
     if not td.empty:
         if isinstance(td.columns, pd.MultiIndex): td.columns = td.columns.get_level_values(0)
@@ -360,15 +390,14 @@ def to_excel(df):
     out = io.BytesIO()
     export_df = df.copy()
     
-    # המרת הקישור הגולמי לנוסחת אקסל הכוללת את שם הטיקר וההייפרלינק המובנה
     if 'TV_Link' in export_df.columns:
-        # חילוץ הטיקר מתוך כתובת ה-URL ליצירת התצוגה הנקייה באקסל
         symbols = export_df['TV_Link'].str.extract(r'symbol=(.*)')[0]
-        # בניית נוסחת HYPERLINK של אקסל
         export_df['TV_Link'] = '=HYPERLINK("' + export_df['TV_Link'] + '", "' + symbols + '")'
         
     with pd.ExcelWriter(out, engine='xlsxwriter') as w:
         export_df.to_excel(w, index=False)
     return out.getvalue()
 
-st.download_button("📥 הורד רשימה ל-Excel", to_excel(strike_zone_df), f"Market_Export_{datetime.now().strftime('%Y%m%d')}.xlsx")
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ייצוא נתונים")
+st.sidebar.download_button("📥 הורד רשימה ל-Excel", to_excel(strike_zone_df), f"Market_Export_{datetime.now().strftime('%Y%m%d')}.xlsx")
