@@ -2,13 +2,18 @@ name: Update Market Data
 
 on:
   schedule:
-    # מריץ כל 30 דקות. אפשר לשנות את התזמון לפי סינטקס של Cron.
+    # מריץ כל 30 דקות.
     - cron: '*/30 * * * *'
-  workflow_dispatch: # מאפשר לך להריץ את זה גם ידנית בלחיצת כפתור בגיטהאב
+  workflow_dispatch: # מאפשר הרצה ידנית
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    
+    # הפתרון הקריטי: הגדרת תיקיית העבודה הפנימית עבור כל הפקודות
+    defaults:
+      run:
+        working-directory: ./MarketApp
 
     steps:
       - name: Checkout repository
@@ -17,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10' # או הגרסה שאתה עובד איתה
+          python-version: '3.10' 
 
       - name: Install dependencies
         run: |
