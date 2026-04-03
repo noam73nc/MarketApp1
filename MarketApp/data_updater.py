@@ -27,22 +27,31 @@ def update_market_data():
         # 1. TradingView Live Data
         query = (Query()
                  .set_markets('america')
-                 .select('name', 'close', 'open', 'high', 'low', 'volume', 'average_volume_10d_calc', 
+                 .select('name','type', 'close', 'open', 'high', 'low', 'volume', 'average_volume_10d_calc', 
                          'market_cap_basic', 'sector', 'industry', 
                          'SMA10', 'SMA20', 'SMA50', 'SMA200', 'price_52_week_high', 'price_52_week_low',
                          'Perf.W', 'Perf.1M', 'Perf.3M', 'Perf.Y', 'ATR')
                  .where(Column('close') > 1, Column('average_volume_10d_calc') > 100000)
                  .limit(4500)) 
         
-        count, df_tv = query.get_scanner_data()
+       count, df_tv = query.get_scanner_data()
+        
+        # 1. קודם מוודאים שבכלל קיבלנו נתונים מהשרת
         if df_tv.empty: 
             print("❌ לא התקבלו נתונים מ-TV")
-            return
-
+            return 
+            
+        # 2. סינון תעודות הסל והמדדים (משאיר רק מניות רגילות וזרות)
+        if 'type' in df_tv.columns:
+            df_tv = df_tv[df_tv['type'].isin(['stock', 'dr'])]
+            
+        # 3. העברת הנתונים ל-df_raw ושינוי שמות העמודות בפעולה אחת
         rename_map = {'ticker': 'Symbol', 'name': 'Company_Name', 'close': 'Price', 'volume': 'TV_Volume', 
                       'average_volume_10d_calc': 'TV_AvgVol10', 'market_cap_basic': 'Market Cap', 
                       'industry': 'Industry Group Name'}
         df_raw = df_tv.rename(columns=rename_map).copy()
+        
+        # 4. המשך החישובים שלך
         df_raw['Symbol'] = df_raw['Symbol'].apply(lambda x: x.split(':')[-1] if isinstance(x, str) and ':' in x else x)
         df_raw['TV_Link'] = "https://www.tradingview.com/chart/?symbol=" + df_raw['Symbol']
         df_raw['Market_Cap_B'] = pd.to_numeric(df_raw['Market Cap'], errors='coerce') / 1_000_000_000.0
