@@ -147,16 +147,31 @@ def update_market_data():
                 
             # כעת נמלא את החסר (או את הכל אם היא הייתה ריקה)
             df_raw['RS Rating'] = df_raw['RS Rating'].fillna(df_raw['Perf.Y'].rank(pct=True)*99).astype(int)
-
-        # Excel Alerts Backfill
+        # Excel Alerts Backfill - עם דיווח שגיאות
         ex_p = glob.glob(os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx"))
         if ex_p:
             try:
-                edfx = pd.read_excel(max(ex_p, key=os.path.getmtime), sheet_name='Full Raw Data')
-                df_raw = pd.merge(df_raw, edfx[['Symbol', 'Earnings_Alert', 'Kinetic_Slope', 'VDU_Alert']], on='Symbol', how='left')
-            except: pass
+                latest_excel = max(ex_p, key=os.path.getmtime)
+                print(f"📄 מנסה לטעון קובץ אקסל: {latest_excel}")
+                edfx = pd.read_excel(latest_excel, sheet_name='Full Raw Data')
+                
+                # התיקון: העמודה שונתה ל-Earnings_Date
+                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert']
+                available_cols = [c for c in cols_to_merge if c in edfx.columns]
+                
+                if 'Symbol' in available_cols:
+                    df_raw = pd.merge(df_raw, edfx[available_cols], on='Symbol', how='left')
+                    print(f"✅ נתוני אקסל מוזגו בהצלחה! עמודות שנוספו: {available_cols}")
+                else:
+                    print("❌ שגיאה: העמודה 'Symbol' חסרה בקובץ האקסל, לא ניתן למזג נתונים.")
+                    
+            except Exception as e: 
+                print(f"❌ קריאת האקסל נכשלה. הסיבה: {e}")
+        else:
+            print("⚠️ לא נמצא קובץ אקסל שמתחיל ב-Ultimate_Market_V3f_ בתיקייה.")
 
-        for c in ['Earnings_Alert', 'Kinetic_Slope', 'VDU_Alert']:
+        # התיקון: העמודה שונתה ל-Earnings_Date
+        for c in ['Earnings_Date', 'Kinetic_Slope', 'VDU_Alert']:
             if c not in df_raw.columns: df_raw[c] = ''
 
         # 5. שמירת הנתונים המעובדים לקבצים מקומיים (Pickle)
