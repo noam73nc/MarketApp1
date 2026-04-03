@@ -240,7 +240,9 @@ m1, m2 = st.columns(2)
 with m1:
     if not group_df.empty:
         st.caption("🏆 LEADERS: TOP 40 IBD GROUPS")
-        st.dataframe(group_df.sort_values('Rank this Wk').head(40), use_container_width=True, hide_index=True, height=350)
+        # הסינון החדש: מסנן החוצה את ה-0 (המדדים) ולוקח רק דירוגים מ-1 ומעלה
+        leaders_df = group_df[group_df['Rank this Wk'] > 0].sort_values('Rank this Wk').head(40)
+        st.dataframe(leaders_df, use_container_width=True, hide_index=True, height=350)
     else:
         st.warning("⚠️ טבלת Macro מוסתרת כי הקובץ 'Group Ranking.csv' לא נמצא בתיקיית הנתונים בגיטהאב.")
 
