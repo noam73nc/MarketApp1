@@ -91,9 +91,23 @@ def update_market_data():
         h52, l52 = df_raw['price_52_week_high'], df_raw['price_52_week_low']
         df_raw['52W_High_Pct'] = np.where(h52 > 0, (p - h52) / h52, -1)
         df_raw['52W_Low_Pct'] = np.where(l52 > 0, (p - l52) / l52, 0)
+        
+        # שלב 2 חוקים נוקשים (Trend Template)
         c2 = (p > ma50) & (ma50 > ma200) & (df_raw['52W_Low_Pct'] >= 0.25) & (df_raw['52W_High_Pct'] >= -0.25)
+        # שלב 4 חוקים נוקשים
         c4 = (p < ma50) & (ma50 < ma200)
-        df_raw['Weinstein_Stage'] = np.select([c2, c4], ['Stage 2 🚀 Adv', 'Stage 4 📉 Dec'], default='Stage 1/3')
+        
+        # פיצול שלב 1 ו-3 לוגי
+        # שלב 3: לא במגמה ברורה, אבל ממוצע קצר מעל ארוך (נופלת מפסגה)
+        c3 = (~c2) & (~c4) & (ma50 >= ma200)
+        # שלב 1: לא במגמה ברורה, אבל ממוצע קצר מתחת לארוך (מטפסת מתחתית)
+        c1 = (~c2) & (~c4) & (ma50 < ma200)
+
+        df_raw['Weinstein_Stage'] = np.select(
+            [c2, c4, c3, c1], 
+            ['Stage 2 🚀 Adv', 'Stage 4 📉 Dec', 'Stage 3 ⚠️ Top', 'Stage 1 🏗️ Base'], 
+            default='Unknown'
+        )
 
         # 4. IBD & Group Ranking Load
         df_ibd = pd.DataFrame()
