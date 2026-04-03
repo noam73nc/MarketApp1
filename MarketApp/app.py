@@ -220,24 +220,22 @@ st.markdown("### 📈 INTERACTIVE CHARTING")
 tks = sorted(df_filtered['Symbol'].dropna().unique())
 
 if tks:
-    # --- יצירת סרגל הכלים שלנו ב-Streamlit ---
     c_top1, c_top2, c_top3, c_top4 = st.columns([2, 1.5, 1.5, 1.5])
     with c_top1:
         sel_t = st.selectbox("🎯 בחר מניה:", tks)
     with c_top2:
         timeframe = st.selectbox("⏳ טווח זמן:", ["יומי (1D)", "שבועי (1W)"])
     with c_top3:
-        chart_type = st.selectbox("📊 תצוגה:", ["נרות יפניים", "קו חלק (Line)"])
+        # הוספנו כאן את האופציה לברים
+        chart_type = st.selectbox("📊 תצוגה:", ["נרות יפניים", "ברים (Bar)", "קו חלק (Line)"])
     with c_top4:
         history = st.selectbox("📅 היסטוריה:", ["שנתיים (2Y)", "5 שנים (5Y)", "מקסימום (Max)"])
 
-    # תרגום הבחירות לפרמטרים של Yahoo Finance
     interval_map = {"יומי (1D)": "1d", "שבועי (1W)": "1wk"}
     period_map = {"שנתיים (2Y)": "2y", "5 שנים (5Y)": "5y", "מקסימום (Max)": "max"}
 
     with st.spinner(f"מושך נתוני היסטוריה עבור {sel_t}..."):
         try:
-            # משיכת הנתונים עם הטווח והזמן שנבחרו דינמית בסרגל
             td = yf.download(sel_t, period=period_map[history], interval=interval_map[timeframe], progress=False)
             
             if td.empty:
@@ -246,22 +244,20 @@ if tks:
                 if isinstance(td.columns, pd.MultiIndex): 
                     td.columns = td.columns.get_level_values(0)
                 
-                # חישוב ממוצעים نעים
                 td['SMA21'] = td['Close'].rolling(21).mean()
                 td['SMA50'] = td['Close'].rolling(50).mean()
                 td['SMA200'] = td['Close'].rolling(200).mean()
                 
-                # הסרנו את ההגבלה! מציג כעת את כל ההיסטוריה שנבחרה
                 disp = td.dropna(subset=['Close']) 
                 
                 main_data, vols, s21, s50, s200 = [], [], [], [], []
                 for d, r in disp.iterrows():
                     ts = d.strftime('%Y-%m-%d')
                     
-                    # בניית הנתונים לפי סוג הגרף שנבחר
-                    if chart_type == "נרות יפניים":
+                    # גם נרות וגם ברים צריכים נתוני פתיחה, גבוה, נמוך, סגירה
+                    if chart_type in ["נרות יפניים", "ברים (Bar)"]:
                         main_data.append({"time": ts, "open": float(r['Open']), "high": float(r['High']), "low": float(r['Low']), "close": float(r['Close'])})
-                    else: # גרף קווי
+                    else: # גרף קווי דורש רק שערי סגירה
                         main_data.append({"time": ts, "value": float(r['Close'])})
                         
                     vols.append({"time": ts, "value": float(r['Volume']), "color": '#26a69a80' if r['Close'] >= r['Open'] else '#ef535080'})
@@ -269,7 +265,6 @@ if tks:
                     if pd.notna(r['SMA50']): s50.append({"time": ts, "value": float(r['SMA50'])})
                     if pd.notna(r['SMA200']): s200.append({"time": ts, "value": float(r['SMA200'])})
                 
-                # עיצוב הגרף (מותאם אישית לאווירת Space Command)
                 opts = {
                     "height": 700,
                     "layout": {"textColor": '#D1D4DC', "background": {"type": 'solid', "color": '#0B0F19'}},
@@ -283,19 +278,25 @@ if tks:
                     "timeScale": {"borderColor": '#2B2B43'}
                 }
                 
-                # הגדרות תצוגה דינמיות לסדרה הראשית
-                series_type = 'Candlestick' if chart_type == "נרות יפניים" else 'Line'
-                series_opts = {"upColor": '#26a69a', "downColor": '#ef5350', "borderVisible": False, "wickUpColor": '#26a69a', "wickDownColor": '#ef5350'} if chart_type == "נרות יפניים" else {"color": '#00E5FF', "lineWidth": 3}
+                # הגדרות סוג הסדרה והעיצוב לפי הבחירה
+                if chart_type == "נרות יפניים":
+                    series_type = 'Candlestick'
+                    series_opts = {"upColor": '#26a69a', "downColor": '#ef5350', "borderVisible": False, "wickUpColor": '#26a69a', "wickDownColor": '#ef5350'}
+                elif chart_type == "ברים (Bar)":
+                    series_type = 'Bar'
+                    series_opts = {"upColor": '#26a69a', "downColor": '#ef5350'} # צבעי ברים
+                else:
+                    series_type = 'Line'
+                    series_opts = {"color": '#00E5FF', "lineWidth": 3}
                 
                 c_left, c_main, c_right = st.columns([0.01, 0.98, 0.01])
                 with c_main:
-                    # מפתח ייחודי קריטי כדי שהגרף יתרנדר מחדש כשמשנים טווח זמן
                     renderLightweightCharts([{"chart": opts, "series": [
                         {"type": series_type, "data": main_data, "options": series_opts},
                         {"type": 'Histogram', "data": vols, "options": {"priceFormat": {"type": 'volume'}, "priceScaleId": 'left'}},
                         {"type": 'Line', "data": s21, "options": {"color": "#1053e6", "lineWidth": 2, "title": 'MA 21'}},
                         {"type": 'Line', "data": s50, "options": {"color": "#14b11c", "lineWidth": 2, "title": 'MA 50'}},
-                        {"type": 'Line', "data": s200, "options": {"color": '#FF0000', "lineWidth": 2, "title": 'MA 200'}}
+                        {"type": 'Line', "data": s200, "options": {"color": '#FF0000', "lineWidth": 2, "title": 'MA 200'}} # כאן נשמר האדום
                     ]}], key=f'chart_{sel_t}_{history}_{timeframe}_{chart_type}')
                     
         except Exception as e:
