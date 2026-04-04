@@ -206,7 +206,7 @@ if 'Action_Score' not in display_final: display_final.insert(0, 'Action_Score')
 
 strike_zone_df = df_filtered[display_final].sort_values('Action_Score', ascending=False)
 
-st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=900,
+st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=600,
     column_config={
         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
         "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
@@ -267,7 +267,7 @@ if tks:
                     if pd.notna(r['SMA200']): s200.append({"time": ts, "value": float(r['SMA200'])})
                 
                 opts = {
-                    "height": 500,
+                    "height": 600,
                     "layout": {"textColor": '#D1D4DC', "background": {"type": 'solid', "color": '#0B0F19'}},
                     "grid": {
                         "vertLines": {"color": 'rgba(42, 46, 57, 0.5)', "style": 1},
@@ -315,7 +315,7 @@ with m1:
         st.caption("🏆 LEADERS: TOP 40 IBD GROUPS")
         # הסינון החדש: מסנן החוצה את ה-0 (המדדים) ולוקח רק דירוגים מ-1 ומעלה
         leaders_df = group_df[group_df['Rank this Wk'] > 0].sort_values('Rank this Wk').head(40)
-        st.dataframe(leaders_df, use_container_width=True, hide_index=True, height=500)
+        st.dataframe(leaders_df, use_container_width=True, hide_index=True, height=800)
     else:
         st.warning("⚠️ טבלת Macro מוסתרת כי הקובץ 'Group Ranking.csv' לא נמצא בתיקיית הנתונים בגיטהאב.")
 
@@ -325,7 +325,7 @@ with m2:
         j_df = df_raw[df_raw['Industry Group Name'].isin(top_j['Industry Group Name'])]
         st.caption("🚀 MOMENTUM: TOP STOCKS IN JUMPING GROUPS")
         st.dataframe(j_df[['Industry Group Name', 'Rank_Improvement', 'TV_Link', 'RS Rating']].sort_values(['Rank_Improvement', 'RS Rating'], ascending=False), 
-                     use_container_width=True, hide_index=True, height=500,
+                     use_container_width=True, hide_index=True, height=800,
                      column_config={"TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
                                    "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99)})
 
