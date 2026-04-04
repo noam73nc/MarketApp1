@@ -32,7 +32,7 @@ def update_market_data():
                          'SMA10', 'SMA20', 'SMA50', 'SMA200', 'price_52_week_high', 'price_52_week_low',
                          'Perf.W', 'Perf.1M', 'Perf.3M', 'Perf.Y', 'ATR')
                  .where(Column('close') > 1, Column('average_volume_10d_calc') > 100000)
-                 .limit(8000)) 
+                 .limit(4500)) 
         
         count, df_tv = query.get_scanner_data()
         
