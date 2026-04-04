@@ -34,7 +34,7 @@ def update_market_data():
                  .where(Column('close') > 1, Column('average_volume_10d_calc') > 100000)
                  .limit(4500)) 
         
-       count, df_tv = query.get_scanner_data()
+        count, df_tv = query.get_scanner_data()
         
         # 1. קודם מוודאים שבכלל קיבלנו נתונים מהשרת
         if df_tv.empty: 
