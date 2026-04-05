@@ -190,10 +190,11 @@ with st.expander("🛠️ ADVANCED FILTERS & COLUMNS"):
             if sel: df_filtered = df_filtered[df_filtered[col].astype(str).isin(sel)]
 
     st.markdown("---")
-    possible_cols = ['TV_Link', 'Price', 'RS Rating','Rel_Volume', 'Comp. Rating', 'EPS Rating', 'Acc/Dis Rating', 'SMR Rating', 
-                    'Spon Rating', 'Ind Grp RS', 'Rank_Improvement', 'Weinstein_Stage', 'Pattern_Badges', 'VDU_Alert', 'Earnings_Date']
-    available_cols = [c for c in possible_cols if c in df_raw.columns]
-    default_cols = ['TV_Link', 'Price', 'RS Rating','Rel_Volume', 'Comp. Rating', 'Ind Grp RS', 'Rank_Improvement', 'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date']
+    possible_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Name', 
+                    'SMA20_Pct', 'SMA50_Pct', 'Comp. Rating', 'Pattern_Badges', 'Weinstein_Stage', 'Earnings_Date']
+    
+    default_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Name', 
+                   'SMA20_Pct', 'SMA50_Pct', 'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date']
     selected_view = st.multiselect("👀 בחר עמודות להצגה:", available_cols, default=[c for c in default_cols if c in available_cols])
 
 # Action Score calculation
@@ -206,12 +207,16 @@ if 'Action_Score' not in display_final: display_final.insert(0, 'Action_Score')
 
 strike_zone_df = df_filtered[display_final].sort_values('Action_Score', ascending=False)
 
-st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=600,
+st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=800,
     column_config={
         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
         "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
         "Price": st.column_config.NumberColumn("PRICE", format="$%.2f"),
         "Rel_Volume": st.column_config.NumberColumn("RVOL 📊", format="%.2f"),
+        "Kinetic_Slope": st.column_config.NumberColumn("SLOPE 📈", format="%.2f"), # עמודה חדשה
+        "SMA20_Pct": st.column_config.NumberColumn("20MA %", format="%.1f%%"),     # תצוגת אחוזים
+        "SMA50_Pct": st.column_config.NumberColumn("50MA %", format="%.1f%%"),     # תצוגת אחוזים
+        "Industry Group Name": st.column_config.TextColumn("INDUSTRY 🏗️"),
         "Earnings_Date": st.column_config.TextColumn("דוחות 📅")
     })
 
