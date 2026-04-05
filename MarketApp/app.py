@@ -226,8 +226,10 @@ default_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
 # מגדיר אילו עמודות זמינות בפועל בתוך הנתונים כרגע
 available_cols = [c for c in possible_cols if c in df_filtered.columns]
 
-selected_view = st.multiselect("👀 בחר עמודות להצגה:", available_cols, default=[c for c in default_cols if c in available_cols])
-
+# --- התוספת החדשה: עטיפה באקורדיון (Expander) נפתח ונסגר ---
+with st.expander("👀 בחירת עמודות להצגה בטבלה", expanded=False):
+    selected_view = st.multiselect("סמן או הסר עמודות מהרשימה:", available_cols, default=[c for c in default_cols if c in available_cols])
+    
 # 3. השילוב של קוד ה- Action Score שלך עם מניעת שגיאות
 display_final = selected_view.copy()
 if 'Action_Score' in df_filtered.columns and 'Action_Score' not in display_final: 
