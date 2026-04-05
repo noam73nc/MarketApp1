@@ -195,6 +195,9 @@ with st.expander("🛠️ ADVANCED FILTERS & COLUMNS"):
     
     default_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Name', 
                    'SMA20_Pct', 'SMA50_Pct', 'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date']
+    
+    available_cols = [c for c in possible_cols if c in df_filtered.columns]
+
     selected_view = st.multiselect("👀 בחר עמודות להצגה:", available_cols, default=[c for c in default_cols if c in available_cols])
 
 # Action Score calculation
