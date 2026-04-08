@@ -62,6 +62,10 @@ def update_market_data():
         df_raw['Spread'] = df_raw['high'] - df_raw['low']
         df_raw['Close_Pos'] = np.where(df_raw['Spread'] > 0, (df_raw['Price'] - df_raw['low']) / df_raw['Spread'], 0.5)
         df_raw['ADR_Pct'] = np.where(df_raw['low'] > 0, (df_raw['ATR'] / df_raw['low']) * 100, 0)
+        df_raw['SMA20_Pct'] = np.where(pd.to_numeric(df_raw['SMA20'], errors='coerce') > 0, 
+                                      (df_raw['Price'] - df_raw['SMA20']) / df_raw['SMA20'], 0)
+        df_raw['SMA50_Pct'] = np.where(pd.to_numeric(df_raw['SMA50'], errors='coerce') > 0, 
+                                      (df_raw['Price'] - df_raw['SMA50']) / df_raw['SMA50'], 0)
 
         def get_patterns(row):
             b = []
@@ -168,7 +172,7 @@ def update_market_data():
                 df_raw['RS Rating'] = np.nan
             df_raw['RS Rating'] = df_raw['RS Rating'].fillna(df_raw['Perf.Y'].rank(pct=True)*99).astype(int)
         
-        # Excel Alerts Backfill - מעודכן עם העמודות החדשות
+        # Excel Alerts Backfill - מעודכן: ללא הממוצעים הנעים
         ex_p = glob.glob(os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx"))
         if ex_p:
             try:
@@ -176,15 +180,13 @@ def update_market_data():
                 print(f"📄 מנסה לטעון קובץ אקסל: {latest_excel}")
                 edfx = pd.read_excel(latest_excel, sheet_name='Full Raw Data')
                 
-                # הרשימה המעודכנת: שמרנו על הישנים והוספנו את החדשים שביקשת
-                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct']
+                # הסרנו מכאן את SMA20 ו-SMA50 כדי שהמערכת לא תשאב אותם כישנים מהאקסל
+                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'Industry Group Name']
                 available_cols = [c for c in cols_to_merge if c in edfx.columns]
                 
                 if 'Symbol' in available_cols:
-                    # שימוש ב-suffixes מונע התנגשויות עמודות במקרה של כפילות (כמו Industry Group Name)
                     df_raw = pd.merge(df_raw, edfx[available_cols], on='Symbol', how='left', suffixes=('', '_excel'))
                     
-                    # מיזוג חכם: אם העמודה קיימת באקסל, היא תקבל עדיפות, אחרת נשמור על הנתון הקיים
                     if 'Industry Group Name_excel' in df_raw.columns:
                         df_raw['Industry Group Name'] = df_raw['Industry Group Name_excel'].combine_first(df_raw['Industry Group Name'])
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
@@ -198,8 +200,8 @@ def update_market_data():
         else:
             print("⚠️ לא נמצא קובץ אקסל שמתחיל ב-Ultimate_Market_V3f_ בתיקייה.")
 
-        # וידוא קיום עמודות כדי למנוע קריסות באפליקציה במידה וחסרים נתונים מהאקסל
-        for c in ['Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'SMA20_Pct', 'SMA50_Pct']:
+        # הסרנו מכאן גם את ה-SMA כדי שלא יהפכו למחרוזת ריקה וישבשו את האחוזים באפליקציה
+        for c in ['Earnings_Date', 'Kinetic_Slope', 'VDU_Alert']:
             if c not in df_raw.columns: df_raw[c] = ''
 
         # 5. שמירת הנתונים המעובדים לקבצים מקומיים (Pickle)
