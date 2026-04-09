@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import glob
+import json
 from datetime import datetime
 from tradingview_screener import Query, Column
 
@@ -22,7 +23,10 @@ def find_file_robust(directory, filename_target):
     return None
 
 def update_market_data():
+    run_status = "success"
+    error_msg = ""
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] מתחיל משיכת נתונים ועדכון...")
+    
     try:
         # 1. TradingView Live Data
         query = (Query()
@@ -32,26 +36,21 @@ def update_market_data():
                          'SMA10', 'SMA20', 'SMA50', 'SMA200', 'price_52_week_high', 'price_52_week_low',
                          'Perf.W', 'Perf.1M', 'Perf.3M', 'Perf.Y', 'ATR')
                  .where(Column('close') > 1, Column('average_volume_10d_calc') > 100000)
-                 .limit(4500)) 
+                 .limit(10000)) 
         
         count, df_tv = query.get_scanner_data()
         
-        # 1. קודם מוודאים שבכלל קיבלנו נתונים מהשרת
         if df_tv.empty: 
-            print("❌ לא התקבלו נתונים מ-TV")
-            return 
+            raise ValueError("לא התקבלו נתונים מ-TradingView (DataFrame is empty).")
             
-        # 2. סינון תעודות הסל והמדדים (משאיר רק מניות רגילות וזרות)
         if 'type' in df_tv.columns:
             df_tv = df_tv[df_tv['type'].isin(['stock', 'dr'])]
             
-        # 3. העברת הנתונים ל-df_raw ושינוי שמות העמודות בפעולה אחת
         rename_map = {'ticker': 'Symbol', 'name': 'Company_Name', 'close': 'Price', 'volume': 'TV_Volume', 
                       'average_volume_10d_calc': 'TV_AvgVol10', 'market_cap_basic': 'Market Cap', 
                       'industry': 'Industry Group Name'}
         df_raw = df_tv.rename(columns=rename_map).copy()
         
-        # 4. המשך החישובים שלך
         df_raw['Symbol'] = df_raw['Symbol'].apply(lambda x: x.split(':')[-1] if isinstance(x, str) and ':' in x else x)
         df_raw['TV_Link'] = "https://www.tradingview.com/chart/?symbol=" + df_raw['Symbol']
         df_raw['Market_Cap_B'] = pd.to_numeric(df_raw['Market Cap'], errors='coerce') / 1_000_000_000.0
@@ -62,6 +61,7 @@ def update_market_data():
         df_raw['Spread'] = df_raw['high'] - df_raw['low']
         df_raw['Close_Pos'] = np.where(df_raw['Spread'] > 0, (df_raw['Price'] - df_raw['low']) / df_raw['Spread'], 0.5)
         df_raw['ADR_Pct'] = np.where(df_raw['low'] > 0, (df_raw['ATR'] / df_raw['low']) * 100, 0)
+        
         df_raw['SMA20_Pct'] = np.where(pd.to_numeric(df_raw['SMA20'], errors='coerce') > 0, 
                                       (df_raw['Price'] - df_raw['SMA20']) / df_raw['SMA20'], 0)
         df_raw['SMA50_Pct'] = np.where(pd.to_numeric(df_raw['SMA50'], errors='coerce') > 0, 
@@ -105,15 +105,9 @@ def update_market_data():
         df_raw['52W_High_Pct'] = np.where(h52 > 0, (p - h52) / h52, -1)
         df_raw['52W_Low_Pct'] = np.where(l52 > 0, (p - l52) / l52, 0)
         
-        # שלב 2 חוקים נוקשים (Trend Template)
         c2 = (p > ma50) & (ma50 > ma200) & (df_raw['52W_Low_Pct'] >= 0.25) & (df_raw['52W_High_Pct'] >= -0.25)
-        # שלב 4 חוקים נוקשים
         c4 = (p < ma50) & (ma50 < ma200)
-        
-        # פיצול שלב 1 ו-3 לוגי
-        # שלב 3: לא במגמה ברורה, אבל ממוצע קצר מעל ארוך (נופלת מפסגה)
         c3 = (~c2) & (~c4) & (ma50 >= ma200)
-        # שלב 1: לא במגמה ברורה, אבל ממוצע קצר מתחת לארוך (מטפסת מתחתית)
         c1 = (~c2) & (~c4) & (ma50 < ma200)
 
         df_raw['Weinstein_Stage'] = np.select(
@@ -134,8 +128,8 @@ def update_market_data():
                     if c in df_ibd.columns: df_ibd[c] = pd.to_numeric(df_ibd[c].astype(str).str.replace('%','').str.replace(',',''), errors='coerce')
             except Exception as e: print(f"❌ שגיאת IBD: {e}")
 
-        group_p = find_file_robust(DATA_DIR, "Group Ranking.csv")
         group_df = pd.DataFrame()
+        group_p = find_file_robust(DATA_DIR, "Group Ranking.csv")
         if group_p:
             try:
                 try: gdf = pd.read_csv(group_p, encoding='utf-8-sig')
@@ -154,7 +148,6 @@ def update_market_data():
                     group_df['Rank_Improvement'] = group_df['3 Wks ago'] - group_df['Rank this Wk']
             except Exception as e: print(f"❌ שגיאת Group: {e}")
 
-        # Merging
         if not df_ibd.empty and not group_df.empty:
             df_ibd = pd.merge(df_ibd, group_df[['Rank this Wk', 'Rank_Improvement', 'Industry Group Name']], 
                               left_on='Industry Group Rank', right_on='Rank this Wk', how='left')
@@ -166,53 +159,53 @@ def update_market_data():
                     'Spon Rating', 'Ind Grp RS', 'Industry Group Rank', 'Rank_Improvement', 'Industry Group Name']
             df_raw = pd.merge(df_raw, df_ibd[[c for c in icols if c in df_ibd.columns]], on='Symbol', how='left')
         
-        # RS Backfill - מתוקן וחסין קריסות
         if 'Perf.Y' in df_raw.columns:
-            if 'RS Rating' not in df_raw.columns:
-                df_raw['RS Rating'] = np.nan
+            if 'RS Rating' not in df_raw.columns: df_raw['RS Rating'] = np.nan
             df_raw['RS Rating'] = df_raw['RS Rating'].fillna(df_raw['Perf.Y'].rank(pct=True)*99).astype(int)
         
-        # Excel Alerts Backfill - מעודכן: ללא הממוצעים הנעים
         ex_p = glob.glob(os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx"))
         if ex_p:
             try:
                 latest_excel = max(ex_p, key=os.path.getmtime)
-                print(f"📄 מנסה לטעון קובץ אקסל: {latest_excel}")
                 edfx = pd.read_excel(latest_excel, sheet_name='Full Raw Data')
-                
-                # הסרנו מכאן את SMA20 ו-SMA50 כדי שהמערכת לא תשאב אותם כישנים מהאקסל
-                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'Industry Group Name']
+                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'Industry Group Name', 'Action_Score']
                 available_cols = [c for c in cols_to_merge if c in edfx.columns]
                 
                 if 'Symbol' in available_cols:
                     df_raw = pd.merge(df_raw, edfx[available_cols], on='Symbol', how='left', suffixes=('', '_excel'))
-                    
                     if 'Industry Group Name_excel' in df_raw.columns:
                         df_raw['Industry Group Name'] = df_raw['Industry Group Name_excel'].combine_first(df_raw['Industry Group Name'])
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
-                        
-                    print(f"✅ נתוני אקסל מוזגו בהצלחה! עמודות שנוספו: {available_cols}")
-                else:
-                    print("❌ שגיאה: העמודה 'Symbol' חסרה בקובץ האקסל, לא ניתן למזג נתונים.")
-                    
-            except Exception as e: 
-                print(f"❌ קריאת האקסל נכשלה. הסיבה: {e}")
-        else:
-            print("⚠️ לא נמצא קובץ אקסל שמתחיל ב-Ultimate_Market_V3f_ בתיקייה.")
+            except Exception as e: print(f"❌ שגיאת אקסל: {e}")
 
-        # הסרנו מכאן גם את ה-SMA כדי שלא יהפכו למחרוזת ריקה וישבשו את האחוזים באפליקציה
         for c in ['Earnings_Date', 'Kinetic_Slope', 'VDU_Alert']:
             if c not in df_raw.columns: df_raw[c] = ''
 
-        # 5. שמירת הנתונים המעובדים לקבצים מקומיים (Pickle)
+        # --- השלב החדש: אימות (Validation) ---
+        if df_raw.empty or 'Symbol' not in df_raw.columns:
+            raise ValueError("Validation Failed: Final dataframe is empty or corrupted.")
+
+        # שמירת נתונים
         df_raw.to_pickle(os.path.join(DATA_DIR, "market_snapshot.pkl"))
         group_df.to_pickle(os.path.join(DATA_DIR, "group_snapshot.pkl"))
-        
         print(f"✅ עדכון הסתיים בהצלחה! הנתונים נשמרו.")
-        
+
     except Exception as e:
+        run_status = "error"
+        error_msg = str(e)
         print(f"❌ שגיאה קריטית בעדכון: {e}")
 
+    # --- יצירת קובץ Manifest לממשק ה-UI ובינה מלאכותית ---
+    finally:
+        manifest_data = {
+            "last_updated": datetime.now().isoformat(),
+            "status": run_status,
+            "error_message": error_msg,
+            "total_stocks_processed": len(df_raw) if 'df_raw' in locals() and not df_raw.empty else 0,
+            "columns_available": list(df_raw.columns) if 'df_raw' in locals() and not df_raw.empty else []
+        }
+        with open(os.path.join(DATA_DIR, "manifest.json"), "w", encoding="utf-8") as f:
+            json.dump(manifest_data, f, indent=4)
+
 if __name__ == "__main__":
-    # הרצת העדכון באופן ידני או דרך אוטומציה
     update_market_data()
