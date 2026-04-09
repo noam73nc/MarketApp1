@@ -107,18 +107,28 @@ for col in ['SMA20_Pct', 'SMA50_Pct']:
 
 st.markdown("---")
 
+# הגדרת כל העמודות הכלליות האפשריות
 possible_general = [
     'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
     'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
     'Pattern_Badges', 'Weinstein_Stage', 'Earnings_Date', 'Action_Score',
     'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M'
 ]
+
+# החזרנו את כל עמודות ברירת המחדל כדי שלא תצטרך ללחוץ עליהן ידנית כל פעם
+default_general = [
+    'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
+    'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
+    'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date'
+]
+
 available_general = [c for c in possible_general if c in df_filtered.columns]
 
 with st.expander("👀 בחירת עמודות כלליות בטבלה", expanded=False):
     selected_general = st.multiselect("סמן עמודות טכניות:", available_general, 
-                                     default=[c for c in available_general if c in ['TV_Link', 'Price', 'RS Rating', 'Pattern_Badges']])
+                                     default=[c for c in default_general if c in available_general])
 
+# איחוד כל העמודות (מהלוח הראשי + נתוני ה-IBD מהסיידבר)
 display_final = selected_general + selected_ibd
 if 'Action_Score' in df_filtered.columns and 'Action_Score' not in display_final: 
     display_final.insert(0, 'Action_Score')
@@ -130,19 +140,42 @@ if 'Action_Score' in df_filtered.columns:
 else:
     strike_zone_df = df_filtered[disp_cols]
 
+# === מילון העיצוב המלא והמוחלט של המערכת ===
 st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=800,
     column_config={
+        # עמודות כלליות ומחירים
         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
-        "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
-        "Comp. Rating": st.column_config.ProgressColumn("COMP", format="%d", min_value=0, max_value=99),
-        "EPS Rating": st.column_config.ProgressColumn("EPS", format="%d", min_value=0, max_value=99),
         "Price": st.column_config.NumberColumn("PRICE", format="$%.2f"),
         "Rel_Volume": st.column_config.NumberColumn("RVOL 📊", format="%.2f"),
         "Action_Score": st.column_config.NumberColumn("SCORE 🎯", format="%d"),
+        "Earnings_Date": st.column_config.TextColumn("דוחות 📅"),
+        "Weinstein_Stage": st.column_config.TextColumn("STAGE 📊"),
+        "Pattern_Badges": st.column_config.TextColumn("PATTERNS 🔍"),
+        
+        # אינדיקטורים וטכני
         "SMA20_Pct": st.column_config.NumberColumn("20MA %", format="%.1f%%"),
         "SMA50_Pct": st.column_config.NumberColumn("50MA %", format="%.1f%%"),
+        "Kinetic_Slope": st.column_config.NumberColumn("SLOPE 📈", format="%.2f"),
+        "ATR": st.column_config.NumberColumn("ATR ($)", format="%.2f"),
+        "ADR_Pct": st.column_config.NumberColumn("ADR %", format="%.2f%%"),
+        "Perf.1M": st.column_config.NumberColumn("1M PERF", format="%.1f%%"),
+        "Market_Cap_B": st.column_config.NumberColumn("CAP ($B)", format="%.2f"),
+        
+        # סקטורים
+        "Industry Group Rank": st.column_config.NumberColumn("GRP RANK 🏆", format="%d"),
+        "Industry Group Name": st.column_config.TextColumn("INDUSTRY 🏗️"),
+        
+        # נתוני IBD (ברים גרפיים)
+        "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
+        "Comp. Rating": st.column_config.ProgressColumn("COMP", format="%d", min_value=0, max_value=99),
+        "EPS Rating": st.column_config.ProgressColumn("EPS", format="%d", min_value=0, max_value=99),
+        
+        # נתוני IBD (טקסט)
+        "Acc/Dis Rating": st.column_config.TextColumn("A/D 📈"),
+        "SMR Rating": st.column_config.TextColumn("SMR"),
+        "Spon Rating": st.column_config.TextColumn("SPON"),
+        "Ind Grp RS": st.column_config.TextColumn("GRP RS"),
     })
-
 # --- CHARTING ---
 st.markdown("---")
 st.markdown("### 📈 INTERACTIVE CHARTING")
