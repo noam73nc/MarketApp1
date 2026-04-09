@@ -115,7 +115,6 @@ possible_general = [
     'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M'
 ]
 
-# החזרנו את כל עמודות ברירת המחדל כדי שלא תצטרך ללחוץ עליהן ידנית כל פעם
 default_general = [
     'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
     'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
@@ -140,8 +139,26 @@ if 'Action_Score' in df_filtered.columns:
 else:
     strike_zone_df = df_filtered[disp_cols]
 
+# --- 🧹 התיקון הקריטי: ניקוי סוגי נתונים לפני התצוגה ---
+# מכריח את כל העמודות המספריות להיות מספרים חוקיים, כדי שמנוע התצוגה לא יקרוס
+numeric_cols_to_clean = [
+    'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Rank',
+    'SMA20_Pct', 'SMA50_Pct', 'Action_Score', 'Market_Cap_B', 'ATR', 'ADR_Pct',
+    'Perf.1M', 'Comp. Rating', 'EPS Rating'
+]
+
+for col in numeric_cols_to_clean:
+    if col in strike_zone_df.columns:
+        strike_zone_df[col] = pd.to_numeric(strike_zone_df[col], errors='coerce')
+
+
 # === מילון העיצוב המלא והמוחלט של המערכת ===
-st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=800,
+st.dataframe(
+    strike_zone_df, 
+    use_container_width=True, 
+    hide_index=True, 
+    height=800,
+    column_order=disp_cols, # ⬅️ פקודת הברזל: מכריחה להציג את כל מה שבחרנו!
     column_config={
         # עמודות כלליות ומחירים
         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
@@ -175,7 +192,8 @@ st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=8
         "SMR Rating": st.column_config.TextColumn("SMR"),
         "Spon Rating": st.column_config.TextColumn("SPON"),
         "Ind Grp RS": st.column_config.TextColumn("GRP RS"),
-    })
+    }
+)
 # --- CHARTING ---
 st.markdown("---")
 st.markdown("### 📈 INTERACTIVE CHARTING")
