@@ -2,7 +2,7 @@
 import pandas as pd
 import json
 import os
-import io  # <-- הוספנו את io כדי לאפשר יצירת קבצים בזיכרון השרת
+import io
 from datetime import datetime
 
 # מציאת התיקייה שבה יושב הקובץ הזה, וחיפוש תיקיית data בתוכה
@@ -14,10 +14,8 @@ MARKET_SNAPSHOT_PATH = os.path.join(DATA_DIR, "market_snapshot.pkl")
 GROUP_SNAPSHOT_PATH = os.path.join(DATA_DIR, "group_snapshot.pkl")
 
 def get_manifest() -> dict:
-    """קורא את קובץ המניפסט כדי להבין את מצב המערכת."""
     if not os.path.exists(MANIFEST_PATH):
         return {"status": "error", "message": "Manifest not found. Backend might not have run yet."}
-    
     try:
         with open(MANIFEST_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -25,7 +23,6 @@ def get_manifest() -> dict:
         return {"status": "error", "message": f"Failed to read manifest: {str(e)}"}
 
 def load_market_data() -> pd.DataFrame:
-    """טוען את נתוני המניות בצורה בטוחה."""
     try:
         if os.path.exists(MARKET_SNAPSHOT_PATH):
             return pd.read_pickle(MARKET_SNAPSHOT_PATH)
@@ -34,7 +31,6 @@ def load_market_data() -> pd.DataFrame:
     return pd.DataFrame()
 
 def load_group_data() -> pd.DataFrame:
-    """טוען את נתוני הסקטורים בצורה בטוחה."""
     try:
         if os.path.exists(GROUP_SNAPSHOT_PATH):
             return pd.read_pickle(GROUP_SNAPSHOT_PATH)
@@ -43,50 +39,51 @@ def load_group_data() -> pd.DataFrame:
     return pd.DataFrame()
 
 def get_ui_data():
-    """
-    פונקציה ייעודית עבור ה-Frontend (app.py).
-    מחזירה את טבלאות הנתונים ומעבירה את כל אובייקט המניפסט לצורך בקרה.
-    """
     manifest = get_manifest()
     df_market = load_market_data()
     df_group = load_group_data()
-    
     return df_market, df_group, manifest
 
 # ==========================================
-# פונקציות ייצוא (Export)
+# פונקציות ייצוא (Export) - עם קישורים אמיתיים!
 # ==========================================
 def export_to_excel(df):
-    """
-    ממירה את ה-DataFrame לקובץ אקסל בזיכרון (RAM) עם קישורים לחיצים ל-TradingView.
-    """
     output = io.BytesIO()
     df_export = df.copy()
-    
-    # המרת עמודת הקישורים לנוסחת אקסל לחיצה
-    if 'TV_Link' in df_export.columns and 'Symbol' in df_export.columns:
-        # נוסחת אקסל: =HYPERLINK("URL", "Friendly Name")
-        df_export['TV_Link'] = df_export['Symbol'].apply(
-            lambda x: f'=HYPERLINK("https://www.tradingview.com/chart/?symbol={x}", "{x}")'
-        )
     
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df_export.to_excel(writer, index=False, sheet_name='Action Grid')
         
+        workbook  = writer.book
+        worksheet = writer.sheets['Action Grid']
+        
+        # הגדרת עיצוב לקישור (כחול וקו תחתון)
+        link_format = workbook.add_format({'font_color': 'blue', 'underline': 1})
+        
+        # מחפש את עמודת TV_Link וכותב אליה קישורים טבעיים של אקסל
+        if 'TV_Link' in df_export.columns:
+            col_idx = df_export.columns.get_loc('TV_Link')
+            worksheet.set_column(col_idx, col_idx, 15) # מרחיב את העמודה
+            
+            for row_idx, url in enumerate(df_export['TV_Link']):
+                if pd.notna(url) and isinstance(url, str) and "symbol=" in url:
+                    # מחלץ את הטיקר מתוך הלינק כדי שיוצג בצורה נקייה
+                    ticker = url.split("symbol=")[-1]
+                    worksheet.write_url(row_idx + 1, col_idx, url, link_format, string=ticker)
+                
+        # התאמת רוחב לשאר העמודות
+        for i, col in enumerate(df_export.columns):
+            if col != 'TV_Link':
+                worksheet.set_column(i, i, 12)
+
     return output.getvalue()
 
 # ==========================================
 # הכנה ל-LLM (AI Tooling) בעתיד
-# פונקציות שמודל שפה יוכל להפעיל ישירות
 # ==========================================
 def llm_get_top_stocks(min_score: int = 80, limit: int = 10) -> list:
-    """
-    LLM Tool: Retrieves the top actionable stocks based on the Action_Score.
-    Useful for answering 'What are the best setups right now?'.
-    """
     df = load_market_data()
     if df.empty or 'Action_Score' not in df.columns:
         return []
-    
     top_df = df[df['Action_Score'] >= min_score].sort_values('Action_Score', ascending=False).head(limit)
     return top_df[['Symbol', 'Price', 'Industry Group Name', 'Action_Score', 'Pattern_Badges']].to_dict('records')
