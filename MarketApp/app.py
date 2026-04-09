@@ -196,11 +196,23 @@ if not df_filtered.empty and 'Rank_Improvement' in df_filtered.columns:
         if 'RS Rating' in exist_cols: 
             sort_cols.append('RS Rating')
         
-        st.dataframe(j_df[exist_cols].sort_values(sort_cols, ascending=False), 
-                     use_container_width=True, hide_index=True, height=350,
-                     column_config={
-                         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
-                         "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99)
-                     })
-                         "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99)
-                     })
+        if not j_df.empty:
+        # מוודאים שאנחנו מציגים רק עמודות שבאמת קיימות כדי למנוע קריסות
+        ideal_cols = ['Industry Group Name', 'Rank_Improvement', 'TV_Link', 'RS Rating']
+        exist_cols = [c for c in ideal_cols if c in j_df.columns]
+        
+        # מגדירים לפי מה למיין
+        sort_cols = ['Rank_Improvement']
+        if 'RS Rating' in exist_cols: 
+            sort_cols.append('RS Rating')
+        
+        st.dataframe(
+            j_df[exist_cols].sort_values(sort_cols, ascending=False), 
+            use_container_width=True, 
+            hide_index=True, 
+            height=350,
+            column_config={
+                "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
+                "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99)
+            }
+        )
