@@ -22,6 +22,39 @@ def find_file_robust(directory, filename_target):
     except: pass
     return None
 
+def validate_data(df):
+    """
+    מנוע אימות (Circuit Breaker).
+    זורק שגיאה (ValueError) אם הנתונים לא עוברים את בדיקות השפיות הקפדניות.
+    """
+    if df.empty:
+        raise ValueError("Dataframe is completely empty.")
+
+    # 1. מינימום שורות (מניות)
+    min_stocks = 2500
+    if len(df) < min_stocks:
+        raise ValueError(f"Too few stocks processed ({len(df)}). Expected at least {min_stocks}. Possible API throttling.")
+
+    # 2. עמודות חובה
+    critical_cols = ['Symbol', 'Price', 'Rel_Volume']
+    missing = [c for c in critical_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing absolute critical columns: {', '.join(missing)}")
+
+    # 3. בדיקת ערכים חסרים (Nulls)
+    if df['Price'].isnull().mean() > 0.05:
+        raise ValueError("Excessive nulls in 'Price' column (> 5%).")
+
+    if 'RS Rating' in df.columns and df['RS Rating'].isnull().mean() > 0.40:
+        raise ValueError("Excessive nulls in 'RS Rating' (> 40%). IBD merge likely failed.")
+
+    if 'Action_Score' in df.columns and df['Action_Score'].isnull().mean() > 0.50:
+        raise ValueError("Excessive nulls in 'Action_Score' (> 50%). Excel sheet merge likely failed.")
+
+    # 4. בדיקת הזנת אפסים (Zero-rate Check)
+    if (df['Rel_Volume'] == 0).mean() > 0.20:
+        raise ValueError("Over 20% of stocks have EXACTLY 0 RVOL. Upstream volume feed error suspected.")
+
 def update_market_data():
     run_status = "success"
     error_msg = ""
@@ -57,7 +90,7 @@ def update_market_data():
         df_raw['Dollar_Volume_M'] = (df_raw['Price'] * df_raw['TV_AvgVol10']) / 1_000_000.0
 
         # 2. Live Pattern Engine
-        df_raw['Rel_Volume'] = df_raw['TV_Volume'] / df_raw['TV_AvgVol10']
+        df_raw['Rel_Volume'] = np.where(df_raw['TV_AvgVol10'] > 0, df_raw['TV_Volume'] / df_raw['TV_AvgVol10'], 0)
         df_raw['Spread'] = df_raw['high'] - df_raw['low']
         df_raw['Close_Pos'] = np.where(df_raw['Spread'] > 0, (df_raw['Price'] - df_raw['low']) / df_raw['Spread'], 0.5)
         df_raw['ADR_Pct'] = np.where(df_raw['low'] > 0, (df_raw['ATR'] / df_raw['low']) * 100, 0)
@@ -90,11 +123,6 @@ def update_market_data():
             if adr > 0 and (spread / lo * 100 if lo > 0 else adr) < (adr * 0.6) and rvol < 1.0: b.append("Tight/VCP 🤏")
             if h52p >= -0.02: b.append("52W High 👑")
             if sma10 > 0 and (p / sma10 - 1) > 0.15: b.append("EXT ⚠️")
-            
-            move_pct = spread / lo * 100 if lo > 0 else 0
-            adr_ratio = move_pct / adr if adr > 0 else 0
-            if 0.8 <= adr_ratio <= 1.2: b.append("1 ADR 📏")
-            elif 1.5 <= adr_ratio <= 2.5: b.append("2 ADR 🔥")
             return "  ".join(b)
 
         df_raw['Pattern_Badges'] = df_raw.apply(get_patterns, axis=1)
@@ -159,10 +187,6 @@ def update_market_data():
                     'Spon Rating', 'Ind Grp RS', 'Industry Group Rank', 'Rank_Improvement', 'Industry Group Name']
             df_raw = pd.merge(df_raw, df_ibd[[c for c in icols if c in df_ibd.columns]], on='Symbol', how='left')
         
-        if 'Perf.Y' in df_raw.columns:
-            if 'RS Rating' not in df_raw.columns: df_raw['RS Rating'] = np.nan
-            df_raw['RS Rating'] = df_raw['RS Rating'].fillna(df_raw['Perf.Y'].rank(pct=True)*99).astype(int)
-        
         ex_p = glob.glob(os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx"))
         if ex_p:
             try:
@@ -178,24 +202,22 @@ def update_market_data():
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
             except Exception as e: print(f"❌ שגיאת אקסל: {e}")
 
-        for c in ['Earnings_Date', 'Kinetic_Slope', 'VDU_Alert']:
-            if c not in df_raw.columns: df_raw[c] = ''
+        # --- השלב החדש: אימות קפדני (Strict Validation) לפני שמירה ---
+        print("🔍 מריץ אימות נתונים קפדני (Circuit Breaker)...")
+        validate_data(df_raw)
 
-        # --- השלב החדש: אימות (Validation) ---
-        if df_raw.empty or 'Symbol' not in df_raw.columns:
-            raise ValueError("Validation Failed: Final dataframe is empty or corrupted.")
-
-        # שמירת נתונים
+        # נשמור נתונים רק אם עברנו את האימות (לא נזרקה שגיאה)
         df_raw.to_pickle(os.path.join(DATA_DIR, "market_snapshot.pkl"))
         group_df.to_pickle(os.path.join(DATA_DIR, "group_snapshot.pkl"))
-        print(f"✅ עדכון הסתיים בהצלחה! הנתונים נשמרו.")
+        print(f"✅ אימות עבר! העדכון הסתיים בהצלחה והנתונים נשמרו.")
 
     except Exception as e:
-        run_status = "error"
+        # אם האימות נכשל, אנחנו מגיעים לכאן. הנתונים הישנים מוגנים!
+        run_status = "failed"
         error_msg = str(e)
-        print(f"❌ שגיאה קריטית בעדכון: {e}")
+        print(f"❌ הריצה נכשלה/נבלמה: {error_msg}")
 
-    # --- יצירת קובץ Manifest לממשק ה-UI ובינה מלאכותית ---
+    # --- יצירת קובץ Manifest ---
     finally:
         manifest_data = {
             "last_updated": datetime.now().isoformat(),
