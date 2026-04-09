@@ -31,16 +31,17 @@ st.markdown("""
 # שליפת הנתונים דרך שכבת ה-Data Manager
 # ==========================================
 @st.cache_data(ttl=900)
-def get_cached_ui_data():
+def fetch_ui_data(): # שינינו את השם כדי לשבור את הזיכרון הישן
     return data_manager.get_ui_data()
 
-df_raw, df_grp, manifest = get_cached_ui_data()
+df_raw, df_grp, manifest = fetch_ui_data()
 
 if df_raw.empty:
     st.error("לא נמצאו נתונים כלל. המערכת ריקה. ודא ש-data_updater.py רץ לפחות פעם אחת בהצלחה.")
     st.stop()
 
 # --- עיבוד נתוני המניפסט (סטטוס השרת) ---
+# עכשיו ה-manifest הוא בוודאות מילון, והפקודה get תעבוד מושלם
 run_status = manifest.get("status", "unknown")
 error_msg = manifest.get("error_message", "Unknown error")
 last_updated_raw = manifest.get("last_updated", "")
