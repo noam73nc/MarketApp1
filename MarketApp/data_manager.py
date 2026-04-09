@@ -44,23 +44,13 @@ def load_group_data() -> pd.DataFrame:
 def get_ui_data():
     """
     פונקציה ייעודית עבור ה-Frontend (app.py).
-    מחזירה את טבלאות הנתונים ומחרוזת זמן עדכון מעוצבת להצגה למשתמש.
+    מחזירה את טבלאות הנתונים ומעבירה את כל אובייקט המניפסט לצורך בקרה.
     """
     manifest = get_manifest()
-    last_updated_str = "לא ידוע"
-    
-    if manifest.get("status") == "success" and "last_updated" in manifest:
-        try:
-            # המרת זמן השרת לזמן קריא
-            dt = datetime.fromisoformat(manifest["last_updated"])
-            last_updated_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            pass
-
     df_market = load_market_data()
     df_group = load_group_data()
     
-    return df_market, df_group, last_updated_str
+    return df_market, df_group, manifest
 
 # ==========================================
 # הכנה ל-LLM (AI Tooling) בעתיד
