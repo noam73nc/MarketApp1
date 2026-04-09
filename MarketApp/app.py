@@ -4,8 +4,6 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 from streamlit_lightweight_charts import renderLightweightCharts
-
-# ייבוא המנהל החדש שיצרנו!
 import data_manager
 
 # --- הגדרות עמוד ועיצוב Space Command ---
@@ -23,25 +21,20 @@ st.markdown("""
     .stButton>button:hover { background-color: #00E5FF !important; color: #0B0F19 !important; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); transform: translateY(-2px); }
     .stSelectbox div[data-baseweb="select"] > div, .stMultiSelect div[data-baseweb="select"] > div { background-color: rgba(16, 25, 43, 0.8) !important; border: 1px solid #4DD0E1 !important; color: #00E5FF !important; border-radius: 4px; }
     [data-testid="stDataFrame"] { border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    .stWarning, .stAlert, .stInfo { background: rgba(255, 0, 255, 0.05) !important; border: 1px solid #FF00FF !important; color: #E040FB !important; border-radius: 6px; backdrop-filter: blur(4px); }
     </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# שליפת הנתונים דרך שכבת ה-Data Manager
-# ==========================================
+# --- שליפת נתונים ---
 @st.cache_data(ttl=900)
-def fetch_ui_data(): # שינינו את השם כדי לשבור את הזיכרון הישן
+def fetch_ui_data():
     return data_manager.get_ui_data()
 
 df_raw, df_grp, manifest = fetch_ui_data()
 
 if df_raw.empty:
-    st.error("לא נמצאו נתונים כלל. המערכת ריקה. ודא ש-data_updater.py רץ לפחות פעם אחת בהצלחה.")
+    st.error("לא נמצאו נתונים כלל. ודא ש-data_updater.py רץ בהצלחה.")
     st.stop()
 
-# --- עיבוד נתוני המניפסט (סטטוס השרת) ---
-# עכשיו ה-manifest הוא בוודאות מילון, והפקודה get תעבוד מושלם
 run_status = manifest.get("status", "unknown")
 error_msg = manifest.get("error_message", "Unknown error")
 last_updated_raw = manifest.get("last_updated", "")
@@ -51,12 +44,12 @@ try:
 except:
     last_updated = "לא ידוע"
 
-# --- תפריט צד (SIDEBAR FILTERS) ---
+# --- תפריט צד (SIDEBAR) ---
 with st.sidebar:
     st.header("⚙️ CORE PARAMETERS")
     
     if run_status == "failed":
-        st.error(f"⚠️ תקלת שרת!\n{error_msg}")
+        st.error(f"⚠️ תקלת שרת בעדכון האחרון!\n\n**סיבה:** {error_msg}")
     else:
         st.success(f"📡 מעודכן ל: {last_updated}")
         
@@ -66,102 +59,67 @@ with st.sidebar:
         
     min_rs = st.slider("מינימום RS Rating", 0, 99, 80)
     min_dv = st.number_input("מחזור מסחר מינימלי ($M)", value=5.0)
+    min_mc = st.number_input("שווי שוק מינימלי ($B)", value=1.0)
     
     stages = sorted(df_raw['Weinstein_Stage'].dropna().unique())
     selected_stages = st.multiselect("📊 Stage", stages, default=[s for s in stages if "Stage 2" in s])
+    
+    selected_patterns = st.multiselect("🔍 תבניות מחיר", ["U&R", "HVC", "VCP", "Squat", "VDU"], default=[])
 
-    # --- ✨ תוספת חדשה: בחירת שדות IBD בסיידבר ---
+    # בחירת שדות IBD
     st.markdown("---")
     st.header("📊 IBD DATA SELECTION")
-    ibd_options = [
-        'Comp. Rating', 'EPS Rating', 'Acc/Dis Rating', 
-        'SMR Rating', 'Spon Rating', 'Ind Grp RS'
-    ]
-    # מוודא שהעמודות קיימות בנתונים לפני שמציג אותן לבחירה
+    ibd_options = ['Comp. Rating', 'EPS Rating', 'Acc/Dis Rating', 'SMR Rating', 'Spon Rating', 'Ind Grp RS']
     available_ibd = [c for c in ibd_options if c in df_raw.columns]
-    selected_ibd = st.multiselect("בחר נתוני IBD להצגה:", available_ibd, default=[])
+    selected_ibd = st.multiselect("בחר נתוני IBD:", available_ibd, default=[])
 
-# --- הפעלת הסינונים (ללא שינוי) ---
-# ... (לוגיקת הסינון df_filtered נשארת כפי שהייתה)
+    # --- הדיסקליימר בתחתית הסיידבר ---
+    st.markdown("<br><br>" * 5, unsafe_allow_html=True) # רווח קטן
+    st.markdown("---")
+    st.info("""
+    **⚠️ הצהרת הסרת אחריות (Disclaimer):**
+    המידע המוצג במערכת זו נועד למטרות לימודיות ואינפורמטיביות בלבד ואינו מהווה ייעוץ השקעות, המלצה לביצוע עסקאות או תחליף לשיקול דעת מקצועי. המסחר בשוק ההון כרוך בסיכון גבוה להפסד כספי. המשתמש נושא באחריות המלאה לכל פעולה שיבצע.
+    """)
+
+# --- לוגיקת סינון (חייבת לקרות לפני הכותרת) ---
+df_filtered = df_raw.copy()
+if 'RS Rating' in df_filtered.columns:
+    df_filtered = df_filtered[pd.to_numeric(df_filtered['RS Rating'], errors='coerce') >= min_rs]
+if 'Dollar_Volume_M' in df_filtered.columns:
+    df_filtered = df_filtered[pd.to_numeric(df_filtered['Dollar_Volume_M'], errors='coerce') >= min_dv]
+if 'Market_Cap_B' in df_filtered.columns:
+    df_filtered = df_filtered[pd.to_numeric(df_filtered['Market_Cap_B'], errors='coerce') >= min_mc]
+if selected_stages:
+    df_filtered = df_filtered[df_filtered['Weinstein_Stage'].isin(selected_stages)]
+if selected_patterns:
+    pattern_mask = df_filtered['Pattern_Badges'].apply(lambda x: any(p in str(x) for p in selected_patterns))
+    df_filtered = df_filtered[pattern_mask]
 
 # ==========================================
 # MAIN DASHBOARD AREA
 # ==========================================
 st.title(f"🚀 STRIKE ZONE: ACTION GRID ({len(df_filtered)} STOCKS)")
 
-# המרת אחוזים (ללא שינוי)
+# המרת אחוזים לתצוגה
 for col in ['SMA20_Pct', 'SMA50_Pct']:
     if col in df_filtered.columns:
         df_filtered[col] = pd.to_numeric(df_filtered[col], errors='coerce') * 100
 
 st.markdown("---")
 
-# הגדרת עמודות כלליות (ללא ה-IBD שהעברנו לסיידבר)
 possible_general = [
     'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
     'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
     'Pattern_Badges', 'Weinstein_Stage', 'Earnings_Date', 'Action_Score',
     'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M'
 ]
-
 available_general = [c for c in possible_general if c in df_filtered.columns]
 
 with st.expander("👀 בחירת עמודות כלליות בטבלה", expanded=False):
     selected_general = st.multiselect("סמן עמודות טכניות:", available_general, 
                                      default=[c for c in available_general if c in ['TV_Link', 'Price', 'RS Rating', 'Pattern_Badges']])
 
-# שילוב הבחירות מהסיידבר ומהלוח המרכזי
 display_final = selected_general + selected_ibd
-
-if 'Action_Score' in df_filtered.columns and 'Action_Score' not in display_final: 
-    display_final.insert(0, 'Action_Score')
-
-disp_cols = [c for c in display_final if c in df_filtered.columns]
-
-# מיון והצגה
-strike_zone_df = df_filtered[disp_cols].sort_values('Action_Score', ascending=False) if 'Action_Score' in df_filtered.columns else df_filtered[disp_cols]
-
-st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=800,
-    column_config={
-        "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
-        "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
-        "Comp. Rating": st.column_config.ProgressColumn("COMP", format="%d", min_value=0, max_value=99),
-        "EPS Rating": st.column_config.ProgressColumn("EPS", format="%d", min_value=0, max_value=99),
-        "Price": st.column_config.NumberColumn("PRICE", format="$%.2f"),
-        "Rel_Volume": st.column_config.NumberColumn("RVOL 📊", format="%.2f"),
-        "Action_Score": st.column_config.NumberColumn("SCORE 🎯", format="%d"),
-        "Acc/Dis Rating": st.column_config.TextColumn("A/D 📈"),
-        "SMR Rating": st.column_config.TextColumn("SMR"),
-        "Spon Rating": st.column_config.TextColumn("SPON"),
-        "Ind Grp RS": st.column_config.TextColumn("GRP RS"),
-        "SMA20_Pct": st.column_config.NumberColumn("20MA %", format="%.1f%%"),
-        "SMA50_Pct": st.column_config.NumberColumn("50MA %", format="%.1f%%"),
-    })
-
-# ==========================================
-# MAIN DASHBOARD AREA
-# ==========================================
-st.title(f"🚀 STRIKE ZONE: ACTION GRID ({len(df_filtered)} STOCKS)")
-
-for col in ['SMA20_Pct', 'SMA50_Pct']:
-    if col in df_filtered.columns:
-        df_filtered[col] = pd.to_numeric(df_filtered[col], errors='coerce') * 100
-
-st.markdown("---")
-
-possible_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Rank', 'Industry Group Name', 
-                'SMA20_Pct', 'SMA50_Pct', 'Comp. Rating', 'Pattern_Badges', 'Weinstein_Stage', 'Earnings_Date', 'Action_Score',
-                'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M']
-
-default_cols = ['TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Rank', 'Industry Group Name', 
-               'SMA20_Pct', 'SMA50_Pct', 'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date']
-
-available_cols = [c for c in possible_cols if c in df_filtered.columns]
-
-with st.expander("👀 בחירת עמודות להצגה בטבלה", expanded=False):
-    selected_view = st.multiselect("סמן או הסר עמודות מהרשימה:", available_cols, default=[c for c in default_cols if c in available_cols])
-
-display_final = selected_view.copy()
 if 'Action_Score' in df_filtered.columns and 'Action_Score' not in display_final: 
     display_final.insert(0, 'Action_Score')
 
@@ -176,19 +134,13 @@ st.dataframe(strike_zone_df, use_container_width=True, hide_index=True, height=8
     column_config={
         "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
         "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
+        "Comp. Rating": st.column_config.ProgressColumn("COMP", format="%d", min_value=0, max_value=99),
+        "EPS Rating": st.column_config.ProgressColumn("EPS", format="%d", min_value=0, max_value=99),
         "Price": st.column_config.NumberColumn("PRICE", format="$%.2f"),
         "Rel_Volume": st.column_config.NumberColumn("RVOL 📊", format="%.2f"),
-        "Kinetic_Slope": st.column_config.NumberColumn("SLOPE 📈", format="%.2f"),
-        "Industry Group Rank": st.column_config.NumberColumn("GRP RANK 🏆", format="%d"),
+        "Action_Score": st.column_config.NumberColumn("SCORE 🎯", format="%d"),
         "SMA20_Pct": st.column_config.NumberColumn("20MA %", format="%.1f%%"),
         "SMA50_Pct": st.column_config.NumberColumn("50MA %", format="%.1f%%"),
-        "Action_Score": st.column_config.NumberColumn("SCORE 🎯", format="%d"),
-        "Industry Group Name": st.column_config.TextColumn("INDUSTRY 🏗️"),
-        "Earnings_Date": st.column_config.TextColumn("דוחות 📅"),
-        "Market_Cap_B": st.column_config.NumberColumn("CAP ($B)", format="%.2f"),
-        "ATR": st.column_config.NumberColumn("ATR ($)", format="%.2f"),
-        "ADR_Pct": st.column_config.NumberColumn("ADR %", format="%.2f%%"),
-        "Perf.1M": st.column_config.NumberColumn("1M PERF", format="%.1f%%")
     })
 
 # --- CHARTING ---
