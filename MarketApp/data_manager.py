@@ -2,6 +2,7 @@
 import pandas as pd
 import json
 import os
+import io  # <-- הוספנו את io כדי לאפשר יצירת קבצים בזיכרון השרת
 from datetime import datetime
 
 # מציאת התיקייה שבה יושב הקובץ הזה, וחיפוש תיקיית data בתוכה
@@ -51,6 +52,28 @@ def get_ui_data():
     df_group = load_group_data()
     
     return df_market, df_group, manifest
+
+# ==========================================
+# פונקציות ייצוא (Export)
+# ==========================================
+def export_to_excel(df):
+    """
+    ממירה את ה-DataFrame לקובץ אקסל בזיכרון (RAM) עם קישורים לחיצים ל-TradingView.
+    """
+    output = io.BytesIO()
+    df_export = df.copy()
+    
+    # המרת עמודת הקישורים לנוסחת אקסל לחיצה
+    if 'TV_Link' in df_export.columns and 'Symbol' in df_export.columns:
+        # נוסחת אקסל: =HYPERLINK("URL", "Friendly Name")
+        df_export['TV_Link'] = df_export['Symbol'].apply(
+            lambda x: f'=HYPERLINK("https://www.tradingview.com/chart/?symbol={x}", "{x}")'
+        )
+    
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_export.to_excel(writer, index=False, sheet_name='Action Grid')
+        
+    return output.getvalue()
 
 # ==========================================
 # הכנה ל-LLM (AI Tooling) בעתיד
