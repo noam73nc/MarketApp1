@@ -25,7 +25,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- שליפת נתונים מה-Manager ---
 @st.cache_data(ttl=900)
 def fetch_ui_data():
     return data_manager.get_ui_data()
@@ -36,7 +35,6 @@ if df_raw.empty:
     st.error("לא נמצאו נתונים כלל. ודא ש-data_updater.py רץ בהצלחה.")
     st.stop()
 
-# --- חילוץ סטטוס המערכת ---
 run_status = manifest.get("status", "unknown")
 error_msg = manifest.get("error_message", "Unknown error")
 last_updated_raw = manifest.get("last_updated", "")
@@ -45,7 +43,6 @@ try:
 except:
     last_updated = "לא ידוע"
 
-# --- 1. תפריט צד: קלטים ופילטרים (SIDEBAR FILTERS) ---
 with st.sidebar:
     st.header("⚙️ CORE PARAMETERS")
     
@@ -73,7 +70,6 @@ with st.sidebar:
     available_ibd = [c for c in ibd_options if c in df_raw.columns]
     selected_ibd = st.multiselect("בחר נתוני IBD:", available_ibd, default=[])
 
-# --- 2. הפעלת לוגיקת הסינון (כדי שהייצוא ידע מה קורה) ---
 df_filtered = df_raw.copy()
 if 'RS Rating' in df_filtered.columns:
     df_filtered = df_filtered[pd.to_numeric(df_filtered['RS Rating'], errors='coerce') >= min_rs]
@@ -87,31 +83,6 @@ if selected_patterns:
     pattern_mask = df_filtered['Pattern_Badges'].apply(lambda x: any(p in str(x) for p in selected_patterns))
     df_filtered = df_filtered[pattern_mask]
 
-# --- 3. תפריט צד: כפתור הייצוא והדיסקליימר (אחרי הסינון!) ---
-st.sidebar.markdown("---")
-st.sidebar.header("📤 EXPORT DATA")
-
-if not df_filtered.empty:
-    excel_data = data_manager.export_to_excel(df_filtered)
-    st.sidebar.download_button(
-        label="📥 ייצוא לוח נוכחי לאקסל",
-        data=excel_data,
-        file_name=f"StrikeZone_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-else:
-    st.sidebar.warning("אין נתונים לייצוא (לוח ריק)")
-
-st.sidebar.markdown("<br><br>" * 5, unsafe_allow_html=True)
-st.sidebar.markdown("---")
-st.sidebar.info("""
-**⚠️ הצהרת הסרת אחריות (Disclaimer):**
-המידע המוצג במערכת זו נועד למטרות לימודיות ואינפורמטיביות בלבד ואינו מהווה ייעוץ השקעות. המסחר בשוק ההון כרוך בסיכון גבוה. המשתמש נושא באחריות המלאה לכל פעולה שיבצע.
-""")
-
-# ==========================================
-# MAIN DASHBOARD AREA
-# ==========================================
 st.title(f"🚀 STRIKE ZONE: ACTION GRID ({len(df_filtered)} STOCKS)")
 
 for col in ['SMA20_Pct', 'SMA50_Pct']:
@@ -150,7 +121,6 @@ if 'Action_Score' in df_filtered.columns:
 else:
     strike_zone_df = df_filtered[disp_cols]
 
-# 🧹 ניקוי סוגי נתונים חסין קריסות לפני התצוגה
 numeric_cols_to_clean = [
     'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Rank',
     'SMA20_Pct', 'SMA50_Pct', 'Action_Score', 'Market_Cap_B', 'ATR', 'ADR_Pct',
@@ -194,10 +164,32 @@ st.dataframe(
     }
 )
 
+# === מיקום נכון של כפתור הייצוא בסיידבר ===
+st.sidebar.markdown("---")
+st.sidebar.header("📤 EXPORT DATA")
+
+if not strike_zone_df.empty:
+    excel_data = data_manager.export_to_excel(strike_zone_df)
+    st.sidebar.download_button(
+        label="📥 ייצוא לוח נוכחי לאקסל",
+        data=excel_data,
+        file_name=f"StrikeZone_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+else:
+    st.sidebar.warning("אין נתונים לייצוא (לוח ריק)")
+
+st.sidebar.markdown("<br><br>" * 5, unsafe_allow_html=True)
+st.sidebar.markdown("---")
+st.sidebar.info("""
+**⚠️ הצהרת הסרת אחריות (Disclaimer):**
+המידע המוצג במערכת זו נועד למטרות לימודיות ואינפורמטיביות בלבד ואינו מהווה ייעוץ השקעות. המסחר בשוק ההון כרוך בסיכון גבוה. המשתמש נושא באחריות המלאה לכל פעולה שיבצע.
+""")
+
 # --- CHARTING ---
 st.markdown("---")
 st.markdown("### 📈 INTERACTIVE CHARTING")
-tks = sorted(df_filtered['Symbol'].dropna().unique())
+tks = sorted(df_filtered['Symbol'].dropna().unique()) if 'Symbol' in df_filtered.columns else []
 
 if tks:
     sel_t = st.selectbox("🎯 בחר מניה להצגה (יומי | שנתיים אחורה):", tks)
