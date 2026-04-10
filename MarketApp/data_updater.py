@@ -27,23 +27,20 @@ def find_file_robust(directory, filename_target):
 def validate_data(df):
     """
     מנוע אימות (Circuit Breaker).
-    זורק שגיאה (ValueError) אם הנתונים לא עוברים את בדיקות השפיות הקפדניות.
+    זורק שגיאה אם הנתונים לא עוברים את בדיקות השפיות הקפדניות.
     """
     if df.empty:
         raise ValueError("Dataframe is completely empty.")
 
-    # 1. מינימום שורות (מניות)
     min_stocks = 2500
     if len(df) < min_stocks:
         raise ValueError(f"Too few stocks processed ({len(df)}). Expected at least {min_stocks}. Possible API throttling.")
 
-    # 2. עמודות חובה
     critical_cols = ['Symbol', 'Price', 'Rel_Volume']
     missing = [c for c in critical_cols if c not in df.columns]
     if missing:
         raise ValueError(f"Missing absolute critical columns: {', '.join(missing)}")
 
-    # 3. בדיקת ערכים חסרים (Nulls)
     if df['Price'].isnull().mean() > 0.05:
         raise ValueError("Excessive nulls in 'Price' column (> 5%).")
 
@@ -53,10 +50,9 @@ def validate_data(df):
     if 'Action_Score' in df.columns and df['Action_Score'].isnull().mean() > 0.50:
         raise ValueError("Excessive nulls in 'Action_Score' (> 50%). Excel sheet merge likely failed.")
 
-    # 4. בדיקת הזנת אפסים (Zero-rate Check)
     if (df['Rel_Volume'] == 0).mean() > 0.20:
         raise ValueError("Over 20% of stocks have EXACTLY 0 RVOL. Upstream volume feed error suspected.")
-        
+
 def is_true_vcp(hist_df):
     """
     מנוע מתמטי לזיהוי True VCP לפי מארק מינרוויני.
@@ -70,10 +66,10 @@ def is_true_vcp(hist_df):
     vols = hist_df['Volume'].values
     closes = hist_df['Close'].values
     
-    # 1. זיהוי שיאים (Peaks) - מינימום 7 ימים בין שיא לשיא כדי לסנן "רעש" יומי
+    # 1. זיהוי שיאים (Peaks) - מינימום 7 ימים בין שיא לשיא כדי לסנן רעש
     peaks, _ = find_peaks(highs, distance=7)
     if len(peaks) < 2:
-        return False # חייבים לפחות 2 גלים כדי שתהיה התכנסות
+        return False 
         
     # 2. מדידת עומק התיקונים (Drawdowns) מכל שיא לשפל שאחריו
     contractions = []
@@ -81,7 +77,6 @@ def is_true_vcp(hist_df):
         peak_idx = peaks[i]
         peak_price = highs[peak_idx]
         
-        # השפל חייב להימצא בין השיא הנוכחי לשיא הבא (או עד היום האחרון בגרף)
         end_idx = peaks[i+1] if i + 1 < len(peaks) else len(highs) - 1
         if peak_idx >= end_idx:
             continue
@@ -90,12 +85,10 @@ def is_true_vcp(hist_df):
         drawdown = ((peak_price - trough_price) / peak_price) * 100
         contractions.append(drawdown)
         
-    # מינרוויני דורש בין 2 ל-4 כיווצים בדרך כלל
     if len(contractions) < 2 or len(contractions) > 5:
         return False
         
     # 3. בדיקת ההיצרות (Progressive Tightening)
-    # T1 חייב להיות גדול מ-T2 וכן הלאה (נאפשר 10% גרייס כדי לא לפספס סטאפים טובים)
     for i in range(len(contractions) - 1):
         if contractions[i+1] > contractions[i] * 1.10: 
             return False # התנודתיות התרחבה! (Distribution)
@@ -104,13 +97,13 @@ def is_true_vcp(hist_df):
     if contractions[0] > 35: # התיקון הראשון לא יכול להיות התרסקות
         return False
     final_contraction = contractions[-1]
-    if final_contraction > 10: # הכיווץ האחרון (Tightness) חייב להיות קטן מ-10%
+    if final_contraction > 10: # הכיווץ האחרון חייב להיות קטן מ-10%
         return False
         
     # 5. התייבשות מחזורים (Volume Dry-up) בימי הכיווץ האחרונים
     recent_vol = np.mean(vols[-10:])
     avg_vol = np.mean(vols[-50:])
-    if recent_vol > avg_vol * 0.8: # דורשים שמחזור לאחרונה יתכווץ ב-20% לפחות מהממוצע
+    if recent_vol > avg_vol * 0.8: # דורשים התייבשות של לפחות 20% מהממוצע
         return False
         
     # 6. קרבה לנקודת הפריצה (Pivot)
@@ -118,12 +111,11 @@ def is_true_vcp(hist_df):
     pivot_price = highs[last_peak_idx]
     current_price = closes[-1]
     
-    # המניה חייבת להימצא עד 5% מתחת לנקודת הפריצה של הכיווץ האחרון
     if current_price < pivot_price * 0.95 or current_price > pivot_price * 1.02:
         return False
         
     return True
-    
+
 def update_market_data():
     run_status = "success"
     error_msg = ""
@@ -189,7 +181,7 @@ def update_market_data():
             if rvol > 1.2 and adr > 0 and (spread / lo * 100 if lo > 0 else 0) > adr and cp < 0.4: b.append("SQUAT 🏋️")
             if atr > 0 and spread < (atr * 0.7) and cp > 0.5: b.append("ID 🕯️")
             if perf3 > 0.90 and h52p >= -0.20: b.append("HTF 🚩")
-            if adr > 0 and (spread / lo * 100 if lo > 0 else adr) < (adr * 0.6) and rvol < 1.0: b.append("Tight 🤏")
+            if adr > 0 and (spread / lo * 100 if lo > 0 else adr) < (adr * 0.6) and rvol < 1.0: b.append("Tight 🤏") # שונה מ-VCP!
             if h52p >= -0.02: b.append("52W High 👑")
             if sma10 > 0 and (p / sma10 - 1) > 0.15: b.append("EXT ⚠️")
             return "  ".join(b)
@@ -271,7 +263,72 @@ def update_market_data():
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
             except Exception as e: print(f"❌ שגיאת אקסל: {e}")
 
-        # --- השלב החדש: אימות קפדני (Strict Validation) לפני שמירה ---
+        # =======================================================
+        # 👑 מנוע סריקת עומק (Deep Scan): חיפוש True VCP
+        # =======================================================
+        print("🔍 מכין רשימת מועמדות ל-True VCP...")
+        
+        # יצירת עמודת עזר נומרית ל-RS כדי למנוע קריסה בסינון
+        if 'RS Rating' in df_raw.columns:
+            df_raw['RS_Num'] = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
+        else:
+            df_raw['RS_Num'] = 0
+            
+        vcp_candidates = df_raw[
+            (df_raw['Weinstein_Stage'].astype(str).str.contains('Stage 2')) & 
+            (df_raw['RS_Num'] >= 80) & 
+            (df_raw['TV_AvgVol10'] >= 250000)
+        ]['Symbol'].dropna().tolist()
+        
+        if vcp_candidates:
+            print(f"⏳ מוריד היסטוריית 6 חודשים עבור {len(vcp_candidates)} מניות מועמדות...")
+            try:
+                # הורדת נתונים מרוכזת ומהירה מ-YFinance
+                hist_data = yf.download(vcp_candidates, period="6m", auto_adjust=True, progress=False)
+                true_vcp_tickers = []
+                
+                for ticker in vcp_candidates:
+                    try:
+                        # חילוץ ההיסטוריה של המניה הספציפית
+                        if len(vcp_candidates) > 1:
+                            df_ticker = pd.DataFrame({
+                                'High': hist_data['High'][ticker],
+                                'Low': hist_data['Low'][ticker],
+                                'Close': hist_data['Close'][ticker],
+                                'Volume': hist_data['Volume'][ticker]
+                            }).dropna()
+                        else:
+                            df_ticker = hist_data.dropna()
+                            
+                        # הפעלת האלגוריתם המתמטי
+                        if is_true_vcp(df_ticker):
+                            true_vcp_tickers.append(ticker)
+                    except Exception as e:
+                        continue 
+                
+                # שלב ב': הענקת התגית היוקרתית
+                if true_vcp_tickers:
+                    print(f"🎯 בינגו! נמצאו {len(true_vcp_tickers)} מניות True VCP: {true_vcp_tickers}")
+                    df_raw['Pattern_Badges'] = np.where(
+                        df_raw['Symbol'].isin(true_vcp_tickers),
+                        df_raw['Pattern_Badges'] + "  👑 True VCP",
+                        df_raw['Pattern_Badges']
+                    )
+                    
+                    if 'Action_Score' in df_raw.columns:
+                        df_raw['Action_Score'] = np.where(
+                            df_raw['Symbol'].isin(true_vcp_tickers),
+                            df_raw['Action_Score'] + 15,
+                            df_raw['Action_Score']
+                        )
+            except Exception as e:
+                print(f"⚠️ סריקת ה-VCP נכשלה (המערכת תמשיך כרגיל ללא התגית): {e}")
+
+        # ניקוי עמודת העזר של ה-RS
+        if 'RS_Num' in df_raw.columns:
+            df_raw.drop(columns=['RS_Num'], inplace=True)
+
+        # --- אימות קפדני (Strict Validation) לפני שמירה ---
         print("🔍 מריץ אימות נתונים קפדני (Circuit Breaker)...")
         validate_data(df_raw)
 
@@ -281,7 +338,7 @@ def update_market_data():
         print(f"✅ אימות עבר! העדכון הסתיים בהצלחה והנתונים נשמרו.")
 
     except Exception as e:
-        # אם האימות נכשל, אנחנו מגיעים לכאן. הנתונים הישנים מוגנים!
+        # אם האימות או הריצה נכשלו, הנתונים הישנים מוגנים!
         run_status = "failed"
         error_msg = str(e)
         print(f"❌ הריצה נכשלה/נבלמה: {error_msg}")
