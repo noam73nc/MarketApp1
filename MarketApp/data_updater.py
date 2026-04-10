@@ -6,6 +6,8 @@ import glob
 import json
 from datetime import datetime
 from tradingview_screener import Query, Column
+from scipy.signal import find_peaks
+import yfinance as yf
 
 DATA_DIR = "data"
 if not os.path.exists(DATA_DIR):
@@ -54,7 +56,74 @@ def validate_data(df):
     # 4. בדיקת הזנת אפסים (Zero-rate Check)
     if (df['Rel_Volume'] == 0).mean() > 0.20:
         raise ValueError("Over 20% of stocks have EXACTLY 0 RVOL. Upstream volume feed error suspected.")
-
+        
+def is_true_vcp(hist_df):
+    """
+    מנוע מתמטי לזיהוי True VCP לפי מארק מינרוויני.
+    מקבל היסטוריית גרף יומי של חצי שנה ומחזיר True/False.
+    """
+    if len(hist_df) < 60: # דורש לפחות 3 חודשי היסטוריה לבסיס
+        return False
+        
+    highs = hist_df['High'].values
+    lows = hist_df['Low'].values
+    vols = hist_df['Volume'].values
+    closes = hist_df['Close'].values
+    
+    # 1. זיהוי שיאים (Peaks) - מינימום 7 ימים בין שיא לשיא כדי לסנן "רעש" יומי
+    peaks, _ = find_peaks(highs, distance=7)
+    if len(peaks) < 2:
+        return False # חייבים לפחות 2 גלים כדי שתהיה התכנסות
+        
+    # 2. מדידת עומק התיקונים (Drawdowns) מכל שיא לשפל שאחריו
+    contractions = []
+    for i in range(len(peaks)):
+        peak_idx = peaks[i]
+        peak_price = highs[peak_idx]
+        
+        # השפל חייב להימצא בין השיא הנוכחי לשיא הבא (או עד היום האחרון בגרף)
+        end_idx = peaks[i+1] if i + 1 < len(peaks) else len(highs) - 1
+        if peak_idx >= end_idx:
+            continue
+            
+        trough_price = np.min(lows[peak_idx:end_idx+1])
+        drawdown = ((peak_price - trough_price) / peak_price) * 100
+        contractions.append(drawdown)
+        
+    # מינרוויני דורש בין 2 ל-4 כיווצים בדרך כלל
+    if len(contractions) < 2 or len(contractions) > 5:
+        return False
+        
+    # 3. בדיקת ההיצרות (Progressive Tightening)
+    # T1 חייב להיות גדול מ-T2 וכן הלאה (נאפשר 10% גרייס כדי לא לפספס סטאפים טובים)
+    for i in range(len(contractions) - 1):
+        if contractions[i+1] > contractions[i] * 1.10: 
+            return False # התנודתיות התרחבה! (Distribution)
+            
+    # 4. חוקי עומק מינרוויני נוקשים:
+    if contractions[0] > 35: # התיקון הראשון לא יכול להיות התרסקות
+        return False
+    final_contraction = contractions[-1]
+    if final_contraction > 10: # הכיווץ האחרון (Tightness) חייב להיות קטן מ-10%
+        return False
+        
+    # 5. התייבשות מחזורים (Volume Dry-up) בימי הכיווץ האחרונים
+    recent_vol = np.mean(vols[-10:])
+    avg_vol = np.mean(vols[-50:])
+    if recent_vol > avg_vol * 0.8: # דורשים שמחזור לאחרונה יתכווץ ב-20% לפחות מהממוצע
+        return False
+        
+    # 6. קרבה לנקודת הפריצה (Pivot)
+    last_peak_idx = peaks[-1]
+    pivot_price = highs[last_peak_idx]
+    current_price = closes[-1]
+    
+    # המניה חייבת להימצא עד 5% מתחת לנקודת הפריצה של הכיווץ האחרון
+    if current_price < pivot_price * 0.95 or current_price > pivot_price * 1.02:
+        return False
+        
+    return True
+    
 def update_market_data():
     run_status = "success"
     error_msg = ""
