@@ -1,5 +1,5 @@
 {
-    "last_updated": "2026-04-11T17:11:45.848680",
+    "last_updated": "2026-04-11T17:59:04.272872",
     "status": "success",
     "error_message": "",
     "total_stocks_processed": 4028,
@@ -11,6 +11,7 @@
         "open",
         "high",
         "low",
+        "change",
         "TV_Volume",
         "TV_AvgVol10",
         "Market Cap",
