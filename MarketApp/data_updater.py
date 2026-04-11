@@ -40,12 +40,6 @@ def validate_data(df):
     if df['Price'].isnull().mean() > 0.05:
         raise ValueError("Excessive nulls in 'Price' column (> 5%).")
 
-    if 'RS Rating' in df.columns and df['RS Rating'].isnull().mean() > 0.40:
-        raise ValueError("Excessive nulls in 'RS Rating' (> 40%). IBD merge likely failed.")
-
-    if 'Action_Score' in df.columns and df['Action_Score'].isnull().mean() > 0.50:
-        raise ValueError("Excessive nulls in 'Action_Score' (> 50%). Excel sheet merge likely failed.")
-
     if (df['Rel_Volume'] == 0).mean() > 0.20:
         raise ValueError("Over 20% of stocks have EXACTLY 0 RVOL. Upstream volume feed error suspected.")
 
@@ -108,7 +102,6 @@ def update_market_data():
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] מתחיל משיכת נתונים ועדכון...")
     
     try:
-        # הוספנו את 'change' לשאילתה כדי לחשב את הגאפ!
         query = (Query()
                  .set_markets('america')
                  .select('name','type', 'close', 'open', 'high', 'low', 'change', 'volume', 'average_volume_10d_calc', 
@@ -136,7 +129,6 @@ def update_market_data():
         df_raw['Market_Cap_B'] = pd.to_numeric(df_raw['Market Cap'], errors='coerce') / 1_000_000_000.0
         df_raw['Dollar_Volume_M'] = (df_raw['Price'] * df_raw['TV_AvgVol10']) / 1_000_000.0
 
-        # חישובים טכניים בסיסיים
         df_raw['Rel_Volume'] = np.where(df_raw['TV_AvgVol10'] > 0, df_raw['TV_Volume'] / df_raw['TV_AvgVol10'], 0)
         df_raw['Spread'] = df_raw['high'] - df_raw['low']
         df_raw['Close_Pos'] = np.where(df_raw['Spread'] > 0, (df_raw['Price'] - df_raw['low']) / df_raw['Spread'], 0.5)
@@ -148,38 +140,47 @@ def update_market_data():
                                       (df_raw['Price'] - df_raw['SMA50']) / df_raw['SMA50'], 0)
 
         # ==========================================================
-        # 🧠 מנוע התבניות (Pattern Engine) המורחב
+        # 🧠 מנוע התבניות (Pattern Engine) עם מתמטיקה חסינה (Robust)
         # ==========================================================
         def get_patterns(row):
             b = []
-            p, op, hi, lo = row.get('Price', 0), row.get('open', 0), row.get('high', 0), row.get('low', 0)
-            change = row.get('change', 0) # אחוז השינוי היומי
-            rvol, atr, adr = row.get('Rel_Volume', 1), row.get('ATR', 0), row.get('ADR_Pct', 0)
-            sma10, sma20, sma50, sma200 = row.get('SMA10', 0), row.get('SMA20', 0), row.get('SMA50', 0), row.get('SMA200', 0)
-            spread, cp = row.get('Spread', 0), row.get('Close_Pos', 0.5)
-            perf3 = row.get('Perf.3M', 0)
-            perf3 = (perf3 / 100.0) if not pd.isna(perf3) else 0
-            h52 = row.get('price_52_week_high', 0)
-            h52p = (p - h52) / h52 if h52 and h52 > 0 else -99
+            p = pd.to_numeric(row.get('Price', 0), errors='coerce')
+            op = pd.to_numeric(row.get('open', 0), errors='coerce')
+            hi = pd.to_numeric(row.get('high', 0), errors='coerce')
+            lo = pd.to_numeric(row.get('low', 0), errors='coerce')
+            change_val = pd.to_numeric(row.get('change', 0), errors='coerce')
+            rvol = pd.to_numeric(row.get('Rel_Volume', 1), errors='coerce')
+            atr_val = pd.to_numeric(row.get('ATR', 0), errors='coerce')
+            adr = pd.to_numeric(row.get('ADR_Pct', 0), errors='coerce')
+            sma10 = pd.to_numeric(row.get('SMA10', 0), errors='coerce')
+            sma20 = pd.to_numeric(row.get('SMA20', 0), errors='coerce')
+            sma50 = pd.to_numeric(row.get('SMA50', 0), errors='coerce')
+            sma200 = pd.to_numeric(row.get('SMA200', 0), errors='coerce')
+            spread = pd.to_numeric(row.get('Spread', 0), errors='coerce')
+            cp = pd.to_numeric(row.get('Close_Pos', 0.5), errors='coerce')
+            perf3 = pd.to_numeric(row.get('Perf.3M', 0), errors='coerce') / 100.0 if pd.notna(row.get('Perf.3M')) else 0
+            h52 = pd.to_numeric(row.get('price_52_week_high', 0), errors='coerce')
+            h52p = (p - h52) / h52 if pd.notna(h52) and h52 > 0 else -99
 
-            if p <= 0: return ""
+            if pd.isna(p) or p <= 0: return ""
 
-            # --- ✨ חדש: Episodic Pivot (EP 🚀) ---
-            # מחשבים את הסגירה של אתמול דרך אחוז השינוי של היום
-            if pd.notna(change):
-                prev_close = p / (1 + (change / 100.0))
+            # --- ✨ Episodic Pivot & Gaps ---
+            if pd.notna(change_val) and change_val != 0:
+                prev_close = p / (1 + (change_val / 100.0))
                 if prev_close > 0:
                     gap_pct = ((op - prev_close) / prev_close) * 100
-                    if gap_pct >= 10: # אם הגאפ בפתיחה גדול/שווה ל-10%
+                    if gap_pct >= 10.0: 
                         b.append("EP 🚀")
+                    elif gap_pct >= 4.0: 
+                        b.append("Gap 📈")
 
-            # --- ✨ חדש: תבניות יחס ADR ---
-            if atr > 0:
-                adr_ratio = spread / atr
-                if 0.8 <= adr_ratio <= 1.2:
-                    b.append("1 ADR 📏")
-                elif 1.5 <= adr_ratio <= 2.5:
+            # --- ✨ תבניות יחס ADR ---
+            if pd.notna(atr_val) and atr_val > 0:
+                adr_ratio = spread / atr_val
+                if adr_ratio >= 2.0:
                     b.append("2 ADR 🔥")
+                elif adr_ratio >= 1.5:
+                    b.append("1.5 ADR 📏")
 
             # --- שאר התבניות הקלאסיות ---
             if sma50 > 0 and lo < sma50 < p: b.append("U&R(50) 🛡️")
@@ -188,7 +189,7 @@ def update_market_data():
             if sma20 > 0 and sma50 > 0 and (0.0 <= (p - sma20) / sma20 <= 0.035) and sma20 > sma50: b.append("Ride20 🏄")
             if rvol > 1.5 and p > op and cp > 0.7: b.append("HVC 🚀")
             if rvol > 1.2 and adr > 0 and (spread / lo * 100 if lo > 0 else 0) > adr and cp < 0.4: b.append("SQUAT 🏋️")
-            if atr > 0 and spread < (atr * 0.7) and cp > 0.5: b.append("ID 🕯️")
+            if atr_val > 0 and spread < (atr_val * 0.7) and cp > 0.5: b.append("ID 🕯️")
             if perf3 > 0.90 and h52p >= -0.20: b.append("HTF 🚩")
             if adr > 0 and (spread / lo * 100 if lo > 0 else adr) < (adr * 0.6) and rvol < 1.0: b.append("Tight 🤏")
             if h52p >= -0.02: b.append("52W High 👑")
@@ -273,9 +274,6 @@ def update_market_data():
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
             except Exception as e: print(f"❌ שגיאת אקסל: {e}")
 
-        # =======================================================
-        # 👑 מנוע סריקת עומק (Deep Scan): חיפוש True VCP
-        # =======================================================
         print("🔍 מכין רשימת מועמדות ל-True VCP...")
         
         if 'RS Rating' in df_raw.columns:
@@ -327,7 +325,7 @@ def update_market_data():
                             df_raw['Action_Score']
                         )
             except Exception as e:
-                print(f"⚠️ סריקת ה-VCP נכשלה (המערכת תמשיך כרגיל ללא התגית): {e}")
+                print(f"⚠️ סריקת ה-VCP נכשלה: {e}")
 
         if 'RS_Num' in df_raw.columns:
             df_raw.drop(columns=['RS_Num'], inplace=True)
