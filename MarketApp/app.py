@@ -182,7 +182,7 @@ else:
 st.sidebar.markdown("<br><br>" * 5, unsafe_allow_html=True)
 st.sidebar.markdown("---")
 st.sidebar.info("""
-st.sidebar.markdown(noam73nc© {datetime.now().year}
+
 **⚠️  (Disclaimer):**
 המידע המוצג במערכת זו נועד למטרות לימודיות ואינפורמטיביות בלבד ואינו מהווה המלצה ואו ייעוץ השקעות. המסחר בשוק ההון כרוך בסיכון גבוה. המשתמש נושא באחריות המלאה לכל פעולה שיבצע.
 """)
