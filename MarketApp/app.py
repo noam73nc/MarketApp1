@@ -80,6 +80,30 @@ else:
 st.markdown(theme_css, unsafe_allow_html=True)
 # ==========================================
 
+# ==========================================
+# 📊 מנוע צביעת נתונים לטבלאות (Pandas Styler)
+# ==========================================
+def apply_table_theme(df, theme):
+    """
+    מקבל את נתוני הטבלה ואת העיצוב הנבחר,
+    ומזריק צבעים ישירות לתאים.
+    """
+    if theme == "Cyber-Hacker 💻":
+        bg_color, text_color, border = '#050505', '#00FF41', '#00FF41'
+    elif theme == "Synthwave 👾":
+        # רקע סגול כהה, טקסט תכלת זוהר
+        bg_color, text_color, border = '#120424', '#01CDFE', '#B967FF'
+    else: # Space Command
+        # כחול עמוק, טקסט תכלת חיוור
+        bg_color, text_color, border = '#0B1426', '#8AB4F8', '#1c2b4a'
+        
+    return df.style.set_properties(**{
+        'background-color': bg_color,
+        'color': text_color,
+        'border-color': border,
+        'font-family': 'monospace' if theme == "Cyber-Hacker 💻" else 'sans-serif'
+    })
+
 # --- מערכת אבטחה (שומר סף) ---
 def check_password():
     """מחזיר True אם המשתמש הזין את הסיסמה הנכונה."""
