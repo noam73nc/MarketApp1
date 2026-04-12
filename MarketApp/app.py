@@ -431,6 +431,7 @@ if not df_filtered.empty and 'Rank_Improvement' in df_filtered.columns:
             height=350,
             column_config={
                 "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
-                "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99)
+                "RS Rating": st.column_config.ProgressColumn("RS", format="%d", min_value=0, max_value=99),
+                "Rank_Improvement": st.column_config.NumberColumn("JUMP 🚀", format="%d")
             }
         )
