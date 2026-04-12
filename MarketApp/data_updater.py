@@ -273,6 +273,31 @@ def update_market_data():
                         df_raw['Industry Group Name'] = df_raw['Industry Group Name_excel'].combine_first(df_raw['Industry Group Name'])
                         df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
             except Exception as e: print(f"❌ שגיאת אקסל: {e}")
+        # =======================================================
+        # 🎯 מנוע ציון דינמי (Native Action Score)
+        # =======================================================
+        if 'Action_Score' not in df_raw.columns:
+            print("💡 מחשב Action Score דינמי (לא נמצא קובץ אקסל)...")
+            
+            # 1. בסיס: ציון ה-RS (אם אין, אז 0)
+            base_score = 0
+            if 'RS Rating' in df_raw.columns:
+                base_score = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
+            
+            # 2. מגמה: בונוס על Stage 2
+            stage_bonus = np.where(df_raw['Weinstein_Stage'].astype(str).str.contains('Stage 2'), 10, 0)
+            
+            # 3. תבניות: 5 נקודות על כל אייקון של תבנית מיוחדת
+            pattern_bonus = df_raw['Pattern_Badges'].str.count(r'🚀|🛡️|🤏|📈|🔥|🏀|🏄') * 5
+            pattern_bonus = pattern_bonus.fillna(0)
+            
+            # 4. התייבשות שוק (VDU / SQUAT מורידים ניקוד אם נרצה בעתיד - כרגע נשאיר נקי)
+            penalty = np.where(df_raw['Pattern_Badges'].astype(str).str.contains('🏋️|⚠️'), -5, 0)
+            
+            df_raw['Action_Score'] = base_score + stage_bonus + pattern_bonus + penalty
+            
+            # נדאג שהציון יהיה מספר שלם
+            df_raw['Action_Score'] = df_raw['Action_Score'].round().astype(int)        
 
         print("🔍 מכין רשימת מועמדות ל-True VCP...")
         
