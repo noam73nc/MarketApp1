@@ -328,7 +328,7 @@ for col in numeric_cols_to_clean:
         "Spon Rating": st.column_config.TextColumn("SPON"),
         "Ind Grp RS": st.column_config.TextColumn("GRP RS"),
     }
-)
+
 
 # === מיקום נכון של כפתור הייצוא בסיידבר ===
 st.sidebar.markdown("---")
