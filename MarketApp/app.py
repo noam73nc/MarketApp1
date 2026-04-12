@@ -283,24 +283,19 @@ if 'Action_Score' in df_filtered.columns:
 else:
     strike_zone_df = df_filtered[disp_cols]
 
-numeric_cols_to_clean = [
-    'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 'Industry Group Rank',
-    'SMA20_Pct', 'SMA50_Pct', 'Action_Score', 'Market_Cap_B', 'ATR', 'ADR_Pct',
-    'Perf.1M', 'Comp. Rating', 'EPS Rating'
-]
-
 for col in numeric_cols_to_clean:
     if col in strike_zone_df.columns:
         strike_zone_df[col] = pd.to_numeric(strike_zone_df[col], errors='coerce')
 
-# --- הצגת הטבלה ---
-        styled_df = apply_table_theme(strike_zone_df[col])
-        
-        st.dataframe(
-            styled_df,
-            use_container_width=True,
-            hide_index=True,
-            height=800,
+# 2. --- הצגת הטבלה --- 
+# (הלולאה הסתיימה! אנחנו חוזרים ליישור שמאלה לחלוטין)
+styled_df = apply_table_theme(strike_zone_df, selected_theme)
+
+st.dataframe(
+    styled_df,
+    use_container_width=True,
+    hide_index=True,
+    height=800,
             column_order=disp_cols,
             column_config={
                 "TV_Link": st.column_config.LinkColumn("SYM 🔗", display_text=r"symbol=(.*)"),
