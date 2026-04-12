@@ -10,6 +10,76 @@ from datetime import datetime
 # --- הגדרות עמוד ועיצוב Space Command ---
 st.set_page_config(page_title="Hybrid Command Center", layout="wide", page_icon="📟")
 
+# ==========================================
+# 🎨 מנוע החלפת עיצובים (Theme Switcher)
+# ==========================================
+st.sidebar.markdown("### 🎨 בקרת עיצוב מערכת")
+selected_theme = st.sidebar.radio(
+    "בחר אווירת חדר מסחר:", 
+    ["Space Command 🌌", "Cyber-Hacker 💻", "Synthwave 👾"]
+)
+
+if selected_theme == "Cyber-Hacker 💻":
+    # Option 1: רקע שחור עמוק, טקסט ירוק נאון, פונט מונוספייס (כמו קוד)
+    theme_css = """
+    <style>
+        /* הגדרות כלליות */
+        .stApp { background-color: #050505; color: #00FF41; font-family: 'Courier New', Courier, monospace; }
+        [data-testid="stSidebar"] { background-color: #0a0a0a; border-right: 1px solid #00FF41; }
+        
+        /* כותרות וטקסטים */
+        h1, h2, h3, h4, h5, h6, p, span, div { color: #00FF41 !important; }
+        h1, h2 { text-shadow: 0 0 10px #00FF41; } /* אפקט זוהר חלש לירוק */
+        
+        /* אלמנטים של UI */
+        .st-expander, div[data-testid="stExpander"] { border: 1px solid #00FF41 !important; background-color: #0a0a0a !important; }
+        hr { border-bottom-color: #00FF41 !important; opacity: 0.3; }
+        .stTextInput input { border: 1px solid #00FF41 !important; color: #00FF41 !important; background-color: #000 !important; }
+    </style>
+    """
+
+elif selected_theme == "Synthwave 👾":
+    # Option 3: רקע סגול כהה, הדגשות בוורוד ניאון ותכלת פסטל, סגנון רטרו 80s
+    theme_css = """
+    <style>
+        .stApp { background-color: #120424; color: #FF71CE; font-family: 'Trebuchet MS', sans-serif; }
+        [data-testid="stSidebar"] { background-color: #0d021c; border-right: 2px solid #05FFA1; box-shadow: 2px 0 15px rgba(5, 255, 161, 0.2); }
+        
+        /* כותרות בסגנון סינת'וויב (תכלת זוהר) */
+        h1, h2, h3 { color: #01CDFE !important; text-shadow: 0 0 12px #01CDFE; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* טקסט רגיל בוורוד עדין */
+        p, span, div, h4, h5 { color: #FF71CE !important; }
+        
+        /* אלמנטים של UI */
+        .st-expander, div[data-testid="stExpander"] { border: 1px solid #B967FF !important; background-color: #1a0a33 !important; }
+        hr { border-bottom-color: #B967FF !important; opacity: 0.5; }
+        .stTextInput input { border: 1px solid #01CDFE !important; color: #FF71CE !important; background-color: #0d021c !important; }
+    </style>
+    """
+
+else: 
+    # Option 2: Space Command (דומה לברירת המחדל שבנינו - כחול צי, תכלת ומעט מגנטה)
+    theme_css = """
+    <style>
+        .stApp { background-color: #0B1426; color: #8AB4F8; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        [data-testid="stSidebar"] { background-color: #060B19; border-right: 1px solid #00E5FF; }
+        
+        /* כותרות בתכלת טכנולוגי */
+        h1, h2, h3 { color: #00E5FF !important; }
+        p, span, div { color: #8AB4F8 !important; }
+        
+        /* אלמנטים של UI */
+        .st-expander, div[data-testid="stExpander"] { border: 1px solid #00E5FF !important; background-color: #0a1122 !important; }
+        hr { border-bottom-color: #00E5FF !important; opacity: 0.2; }
+        .stTextInput input { border: 1px solid #00E5FF !important; color: #00E5FF !important; background-color: #060B19 !important; }
+    </style>
+    """
+
+# הזרקת ה-CSS לתוך האפליקציה בפועל
+st.markdown(theme_css, unsafe_allow_html=True)
+# ==========================================
+
 # --- מערכת אבטחה (שומר סף) ---
 def check_password():
     """מחזיר True אם המשתמש הזין את הסיסמה הנכונה."""
