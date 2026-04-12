@@ -416,8 +416,16 @@ if not df_filtered.empty and 'Rank_Improvement' in df_filtered.columns:
         if 'RS Rating' in exist_cols: 
             sort_cols.append('RS Rating')
         
+        # --- שלב העיצוב המשלים ---
+        # 1. מכינים את ה-DataFrame המסונן והממוין
+        momentum_display_df = j_df[exist_cols].sort_values(sort_cols, ascending=False)
+        
+        # 2. מעבירים אותו דרך מנוע העיצוב שבנינו (מזריקים את הצבעים של העיצוב הנבחר)
+        styled_momentum = apply_table_theme(momentum_display_df, selected_theme)
+        
+        # 3. מציגים את הטבלה המעוצבת
         st.dataframe(
-            j_df[exist_cols].sort_values(sort_cols, ascending=False), 
+            styled_momentum, 
             use_container_width=True, 
             hide_index=True, 
             height=350,
