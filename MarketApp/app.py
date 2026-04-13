@@ -10,6 +10,15 @@ from datetime import datetime
 # --- הגדרות עמוד ועיצוב Space Command ---
 st.set_page_config(page_title="Hybrid Command Center", layout="wide", page_icon="📟")
 
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;} /* מעלים את שלוש הנקודות */
+    footer {visibility: hidden;} /* מעלים את קרדיט ברירת המחדל למטה */
+    header {visibility: hidden;} /* מעלים את שורת השיתוף העליונה לחלוטין */
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # ==========================================
 # 🎨 מנוע החלפת עיצובים (Theme Switcher)
 # ==========================================
