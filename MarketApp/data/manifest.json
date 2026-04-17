@@ -1,8 +1,8 @@
 {
-    "last_updated": "2026-04-17T12:47:46.355773",
+    "last_updated": "2026-04-17T13:54:02.526534",
     "status": "success",
     "error_message": "",
-    "total_stocks_processed": 4015,
+    "total_stocks_processed": 3940,
     "columns_available": [
         "Symbol",
         "Company_Name",
