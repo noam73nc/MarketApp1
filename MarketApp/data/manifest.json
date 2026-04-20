@@ -1,8 +1,8 @@
 {
-    "last_updated": "2026-04-20T15:50:20.073928",
+    "last_updated": "2026-04-20T16:25:06.407251",
     "status": "success",
     "error_message": "",
-    "total_stocks_processed": 3997,
+    "total_stocks_processed": 4002,
     "columns_available": [
         "Symbol",
         "Company_Name",
@@ -50,9 +50,7 @@
         "Industry Group Rank",
         "Rank_Improvement",
         "Industry Group Name",
-        "Earnings_Date",
-        "Kinetic_Slope",
-        "VDU_Alert",
-        "Action_Score"
+        "Action_Score",
+        "PP_30d"
     ]
 }
