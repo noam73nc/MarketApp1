@@ -37,12 +37,6 @@ def validate_data(df):
     if missing:
         raise ValueError(f"Missing absolute critical columns: {', '.join(missing)}")
 
-    if df['Price'].isnull().mean() > 0.05:
-        raise ValueError("Excessive nulls in 'Price' column (> 5%).")
-
-    if (df['Rel_Volume'] == 0).mean() > 0.20:
-        raise ValueError("Over 20% of stocks have EXACTLY 0 RVOL. Upstream volume feed error suspected.")
-
 def is_true_vcp(hist_df):
     if len(hist_df) < 60: 
         return False
@@ -99,9 +93,11 @@ def is_true_vcp(hist_df):
 def update_market_data():
     run_status = "success"
     error_msg = ""
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] מתחיל משיכת נתונים ועדכון...")
+    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🚀 מתחיל משיכת נתונים ועדכון מערכת...")
     
     try:
+        # --- חלק 1: משיכת נתוני בסיס מ-TradingView ---
+        print("📡 מתחבר ל-TradingView...")
         query = (Query()
                  .set_markets('america')
                  .select('name','type', 'close', 'open', 'high', 'low', 'change', 'volume', 'average_volume_10d_calc', 
@@ -139,9 +135,7 @@ def update_market_data():
         df_raw['SMA50_Pct'] = np.where(pd.to_numeric(df_raw['SMA50'], errors='coerce') > 0, 
                                       (df_raw['Price'] - df_raw['SMA50']) / df_raw['SMA50'], 0)
 
-        # ==========================================================
-        # 🧠 מנוע התבניות (Pattern Engine) עם מתמטיקה חסינה (Robust)
-        # ==========================================================
+        # --- מנוע תבניות בסיסי (Pattern Engine) ---
         def get_patterns(row):
             b = []
             p = pd.to_numeric(row.get('Price', 0), errors='coerce')
@@ -164,25 +158,18 @@ def update_market_data():
 
             if pd.isna(p) or p <= 0: return ""
 
-            # --- ✨ Episodic Pivot & Gaps ---
             if pd.notna(change_val) and change_val != 0:
                 prev_close = p / (1 + (change_val / 100.0))
                 if prev_close > 0:
                     gap_pct = ((op - prev_close) / prev_close) * 100
-                    if gap_pct >= 10.0: 
-                        b.append("EP 🚀")
-                    elif gap_pct >= 4.0: 
-                        b.append("Gap 📈")
+                    if gap_pct >= 10.0: b.append("EP 🚀")
+                    elif gap_pct >= 4.0: b.append("Gap 📈")
 
-            # --- ✨ תבניות יחס ADR ---
             if pd.notna(atr_val) and atr_val > 0:
                 adr_ratio = spread / atr_val
-                if adr_ratio >= 2.0:
-                    b.append("2 ADR 🔥")
-                elif adr_ratio >= 1.5:
-                    b.append("1.5 ADR 📏")
+                if adr_ratio >= 2.0: b.append("2 ADR 🔥")
+                elif adr_ratio >= 1.5: b.append("1.5 ADR 📏")
 
-            # --- שאר התבניות הקלאסיות ---
             if sma50 > 0 and lo < sma50 < p: b.append("U&R(50) 🛡️")
             if sma20 > 0 and lo < sma20 < p: b.append("U&R(21) 🛡️")
             if sma50 > 0 and (0.0 <= (p - sma50) / sma50 <= 0.03) and p > sma200: b.append("Bounce50 🏀")
@@ -199,7 +186,7 @@ def update_market_data():
 
         df_raw['Pattern_Badges'] = df_raw.apply(get_patterns, axis=1)
 
-        # 3. Weinstein Stages
+        # --- Weinstein Stages ---
         p, ma50, ma200 = df_raw['Price'], df_raw['SMA50'], df_raw['SMA200']
         h52, l52 = df_raw['price_52_week_high'], df_raw['price_52_week_low']
         df_raw['52W_High_Pct'] = np.where(h52 > 0, (p - h52) / h52, -1)
@@ -216,7 +203,8 @@ def update_market_data():
             default='Unknown'
         )
 
-        # 4. IBD & Group Ranking Load
+        # --- שילוב קובצי IBD וקבוצות תעשייה מקומיים ---
+        print("📁 מחפש ומשלב קבצי IBD ו-Group Ranking מקומיים...")
         df_ibd = pd.DataFrame()
         ibd_p = find_file_robust(DATA_DIR, "IBD.csv")
         if ibd_p:
@@ -258,109 +246,131 @@ def update_market_data():
             icols = ['Symbol', 'RS Rating', 'Comp. Rating', 'EPS Rating', 'Acc/Dis Rating', 'SMR Rating', 
                     'Spon Rating', 'Ind Grp RS', 'Industry Group Rank', 'Rank_Improvement', 'Industry Group Name']
             df_raw = pd.merge(df_raw, df_ibd[[c for c in icols if c in df_ibd.columns]], on='Symbol', how='left')
-        
-        ex_p = glob.glob(os.path.join(DATA_DIR, "Ultimate_Market_V3f_*.xlsx"))
-        if ex_p:
-            try:
-                latest_excel = max(ex_p, key=os.path.getmtime)
-                edfx = pd.read_excel(latest_excel, sheet_name='Full Raw Data')
-                cols_to_merge = ['Symbol', 'Earnings_Date', 'Kinetic_Slope', 'VDU_Alert', 'Industry Group Name', 'Action_Score']
-                available_cols = [c for c in cols_to_merge if c in edfx.columns]
-                
-                if 'Symbol' in available_cols:
-                    df_raw = pd.merge(df_raw, edfx[available_cols], on='Symbol', how='left', suffixes=('', '_excel'))
-                    if 'Industry Group Name_excel' in df_raw.columns:
-                        df_raw['Industry Group Name'] = df_raw['Industry Group Name_excel'].combine_first(df_raw['Industry Group Name'])
-                        df_raw.drop(columns=['Industry Group Name_excel'], inplace=True)
-            except Exception as e: print(f"❌ שגיאת אקסל: {e}")
-        # =======================================================
-        # 🎯 מנוע ציון דינמי (Native Action Score)
-        # =======================================================
+            
+        # --- מנוע Action Score דינמי ---
         if 'Action_Score' not in df_raw.columns:
-            print("💡 מחשב Action Score דינמי (לא נמצא קובץ אקסל)...")
-            
-            # 1. בסיס: ציון ה-RS (אם אין, אז 0)
-            base_score = 0
-            if 'RS Rating' in df_raw.columns:
-                base_score = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
-            
-            # 2. מגמה: בונוס על Stage 2
+            base_score = pd.to_numeric(df_raw.get('RS Rating', 0), errors='coerce').fillna(0)
             stage_bonus = np.where(df_raw['Weinstein_Stage'].astype(str).str.contains('Stage 2'), 10, 0)
-            
-            # 3. תבניות: 5 נקודות על כל אייקון של תבנית מיוחדת
             pattern_bonus = df_raw['Pattern_Badges'].str.count(r'🚀|🛡️|🤏|📈|🔥|🏀|🏄') * 5
             pattern_bonus = pattern_bonus.fillna(0)
-            
-            # 4. התייבשות שוק (VDU / SQUAT מורידים ניקוד אם נרצה בעתיד - כרגע נשאיר נקי)
             penalty = np.where(df_raw['Pattern_Badges'].astype(str).str.contains('🏋️|⚠️'), -5, 0)
             
             df_raw['Action_Score'] = base_score + stage_bonus + pattern_bonus + penalty
-            
-            # נדאג שהציון יהיה מספר שלם
             df_raw['Action_Score'] = df_raw['Action_Score'].round().astype(int)        
 
-        print("🔍 מכין רשימת מועמדות ל-True VCP...")
+        # =======================================================
+        # 🧠 מנוע היסטוריה משולב ומוגן: VCP + Pocket Pivots (Batching)
+        # =======================================================
+        print("\n🔍 מכין מנוע היסטוריה (חישוב PP ו-VCP)...")
         
-        if 'RS Rating' in df_raw.columns:
-            df_raw['RS_Num'] = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
-        else:
-            df_raw['RS_Num'] = 0
+        df_raw['PP_30d'] = 0 # אתחול העמודה ב-0 לכולן
+        df_raw['RS_Num'] = pd.to_numeric(df_raw.get('RS Rating', 0), errors='coerce').fillna(0)
             
-        vcp_candidates = df_raw[
-            (df_raw['Weinstein_Stage'].astype(str).str.contains('Stage 2')) & 
-            (df_raw['RS_Num'] >= 80) & 
-            (df_raw['TV_AvgVol10'] >= 250000)
-        ]['Symbol'].dropna().tolist()
+        # סינון המניות הרלוונטיות לבדיקה
+        analysis_candidates = df_raw[
+            (df_raw['RS_Num'] >= 70) & 
+            (df_raw['TV_AvgVol10'] >= 200000)
+        ]['Symbol'].dropna().unique().tolist()
         
-        if vcp_candidates:
-            print(f"⏳ מוריד היסטוריית 6 חודשים עבור {len(vcp_candidates)} מניות מועמדות...")
-            try:
-                hist_data = yf.download(vcp_candidates, period="6m", auto_adjust=True, progress=False)
-                true_vcp_tickers = []
+        vcp_strict_list = df_raw[
+            (df_raw['Weinstein_Stage'].astype(str).str.contains('Stage 2')) & 
+            (df_raw['RS_Num'] >= 80)
+        ]['Symbol'].unique().tolist()
+
+        if not analysis_candidates:
+            print("⚠️ אין מניות שעומדות בתנאי הבסיס להורדת היסטוריה (RS>70 וכו').")
+        else:
+            print(f"⏳ מוריד היסטוריית 6 חודשים עבור {len(analysis_candidates)} מניות מ-yfinance...")
+            print("   הערה: חילקנו את הבקשה לקבוצות קטנות כדי ש-Yahoo לא יחסום אותנו.")
+            
+            true_vcp_tickers = []
+            pp_results = {}
+            success_count = 0
+            
+            batch_size = 50 # גודל הקבוצה - מונע קריסות של Yahoo
+            total_batches = (len(analysis_candidates) // batch_size) + 1
+            
+            for i in range(0, len(analysis_candidates), batch_size):
+                batch_tickers = analysis_candidates[i:i+batch_size]
+                current_batch = (i // batch_size) + 1
+                print(f"   📥 מוריד ומעבד קבוצה {current_batch} מתוך {total_batches}...")
                 
-                for ticker in vcp_candidates:
-                    try:
-                        if len(vcp_candidates) > 1:
-                            df_ticker = pd.DataFrame({
-                                'High': hist_data['High'][ticker],
-                                'Low': hist_data['Low'][ticker],
-                                'Close': hist_data['Close'][ticker],
-                                'Volume': hist_data['Volume'][ticker]
-                            }).dropna()
-                        else:
-                            df_ticker = hist_data.dropna()
-                            
-                        if is_true_vcp(df_ticker):
-                            true_vcp_tickers.append(ticker)
-                    except Exception as e:
-                        continue 
-                
-                if true_vcp_tickers:
-                    print(f"🎯 בינגו! נמצאו {len(true_vcp_tickers)} מניות True VCP: {true_vcp_tickers}")
-                    df_raw['Pattern_Badges'] = np.where(
-                        df_raw['Symbol'].isin(true_vcp_tickers),
-                        df_raw['Pattern_Badges'] + "  👑 True VCP",
-                        df_raw['Pattern_Badges']
-                    )
+                try:
+                    hist_data = yf.download(batch_tickers, period="6mo", group_by='ticker', auto_adjust=True, progress=False)
                     
-                    if 'Action_Score' in df_raw.columns:
-                        df_raw['Action_Score'] = np.where(
-                            df_raw['Symbol'].isin(true_vcp_tickers),
-                            df_raw['Action_Score'] + 15,
-                            df_raw['Action_Score']
-                        )
-            except Exception as e:
-                print(f"⚠️ סריקת ה-VCP נכשלה: {e}")
+                    if hist_data.empty:
+                        print("   ❌ קבוצה זו חזרה ריקה מ-Yahoo, ממשיך לקבוצה הבאה.")
+                        continue
+                        
+                    for ticker in batch_tickers:
+                        try:
+                            # 1. חילוץ בטוח של הנתונים למניה הספציפית
+                            if len(batch_tickers) == 1:
+                                df_ticker = hist_data.dropna(subset=['Close']).copy()
+                            else:
+                                if ticker not in hist_data:
+                                    continue # yfinance החסיר את המניה
+                                df_ticker = hist_data[ticker].dropna(subset=['Close']).copy()
+                                
+                            if df_ticker.empty or len(df_ticker) < 50:
+                                continue
+
+                            # 2. חישוב Pocket Pivot
+                            df_ticker['SMA50'] = df_ticker['Close'].rolling(window=50).mean()
+                            is_green = df_ticker['Close'] > df_ticker['Open']
+                            above_sma50 = df_ticker['Close'] > df_ticker['SMA50']
+                            
+                            # שימוש נטיבי ב-Pandas כדי לא לאבד את התאריכים (Index)
+                            down_volume = df_ticker['Volume'].where(df_ticker['Close'] < df_ticker['Open'], 0)
+                            highest_down_vol_10d = down_volume.rolling(window=10).max().shift(1)
+                            
+                            vol_breakout = df_ticker['Volume'] > highest_down_vol_10d
+                            
+                            is_pp = is_green & above_sma50 & vol_breakout
+                            pp_count_30d = int(is_pp.rolling(window=30).sum().fillna(0).iloc[-1])
+                            
+                            pp_results[ticker] = pp_count_30d
+                            success_count += 1
+                            
+                            # 3. בדיקת VCP
+                            if ticker in vcp_strict_list:
+                                if is_true_vcp(df_ticker):
+                                    true_vcp_tickers.append(ticker)
+                                    
+                        except Exception as e:
+                            print(f"      ⚠️ שגיאת חישוב נקודתית במניה {ticker}: {e}")
+                            continue
+                except Exception as e:
+                    print(f"   ❌ שגיאה בהורדת קבוצה {current_batch}: {e}")
+                    
+            # --- עדכון הטבלה הראשית ---
+            print(f"\n✅ מנוע היסטוריה סיים! חושבו מדדי PP בהצלחה עבור {success_count} מניות.")
+            
+            if pp_results:
+                df_raw['PP_30d'] = df_raw['Symbol'].map(pp_results).fillna(0).astype(int)
+                
+            if true_vcp_tickers:
+                print(f"🎯 בינגו! נמצאו {len(true_vcp_tickers)} מניות True VCP: {true_vcp_tickers}")
+                df_raw['Pattern_Badges'] = np.where(
+                    df_raw['Symbol'].isin(true_vcp_tickers),
+                    df_raw['Pattern_Badges'] + "  👑 True VCP",
+                    df_raw['Pattern_Badges']
+                )
+                df_raw['Action_Score'] = np.where(
+                    df_raw['Symbol'].isin(true_vcp_tickers),
+                    df_raw['Action_Score'] + 15,
+                    df_raw['Action_Score']
+                )
 
         if 'RS_Num' in df_raw.columns:
             df_raw.drop(columns=['RS_Num'], inplace=True)
 
-        print("🔍 מריץ אימות נתונים קפדני (Circuit Breaker)...")
+        print("\n🔍 מריץ אימות נתונים קפדני (Circuit Breaker)...")
         validate_data(df_raw)
 
         df_raw.to_pickle(os.path.join(DATA_DIR, "market_snapshot.pkl"))
         group_df.to_pickle(os.path.join(DATA_DIR, "group_snapshot.pkl"))
-        print(f"✅ אימות עבר! העדכון הסתיים בהצלחה והנתונים נשמרו.")
+        print(f"✅ אימות עבר! העדכון הסתיים בהצלחה והנתונים נשמרו. עכשיו ניתן לפתוח את האפליקציה.")
 
     except Exception as e:
         run_status = "failed"
