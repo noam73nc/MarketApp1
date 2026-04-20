@@ -29,81 +29,53 @@ selected_theme = st.sidebar.radio(
 )
 
 if selected_theme == "Cyber-Hacker 💻":
-    # Option 1: רקע שחור עמוק, טקסט ירוק נאון, פונט מונוספייס (כמו קוד)
     theme_css = """
     <style>
-        /* הגדרות כלליות */
         .stApp { background-color: #050505; color: #00FF41; font-family: 'Courier New', Courier, monospace; }
         [data-testid="stSidebar"] { background-color: #0a0a0a; border-right: 1px solid #00FF41; }
-        
-        /* כותרות וטקסטים */
         h1, h2, h3, h4, h5, h6, p, span, div { color: #00FF41 !important; }
-        h1, h2 { text-shadow: 0 0 10px #00FF41; } /* אפקט זוהר חלש לירוק */
-        
-        /* אלמנטים של UI */
+        h1, h2 { text-shadow: 0 0 10px #00FF41; } 
         .st-expander, div[data-testid="stExpander"] { border: 1px solid #00FF41 !important; background-color: #0a0a0a !important; }
         hr { border-bottom-color: #00FF41 !important; opacity: 0.3; }
         .stTextInput input { border: 1px solid #00FF41 !important; color: #00FF41 !important; background-color: #000 !important; }
     </style>
     """
-
 elif selected_theme == "Synthwave 👾":
-    # Option 3: רקע סגול כהה, הדגשות בוורוד ניאון ותכלת פסטל, סגנון רטרו 80s
     theme_css = """
     <style>
         .stApp { background-color: #120424; color: #FF71CE; font-family: 'Trebuchet MS', sans-serif; }
         [data-testid="stSidebar"] { background-color: #0d021c; border-right: 2px solid #05FFA1; box-shadow: 2px 0 15px rgba(5, 255, 161, 0.2); }
-        
-        /* כותרות בסגנון סינת'וויב (תכלת זוהר) */
         h1, h2, h3 { color: #01CDFE !important; text-shadow: 0 0 12px #01CDFE; text-transform: uppercase; letter-spacing: 1px; }
-        
-        /* טקסט רגיל בוורוד עדין */
         p, span, div, h4, h5 { color: #FF71CE !important; }
-        
-        /* אלמנטים של UI */
         .st-expander, div[data-testid="stExpander"] { border: 1px solid #B967FF !important; background-color: #1a0a33 !important; }
         hr { border-bottom-color: #B967FF !important; opacity: 0.5; }
         .stTextInput input { border: 1px solid #01CDFE !important; color: #FF71CE !important; background-color: #0d021c !important; }
     </style>
     """
-
 else: 
-    # Option 2: Space Command (דומה לברירת המחדל שבנינו - כחול צי, תכלת ומעט מגנטה)
     theme_css = """
     <style>
         .stApp { background-color: #0B1426; color: #8AB4F8; font-family: 'Segoe UI', Tahoma, sans-serif; }
         [data-testid="stSidebar"] { background-color: #060B19; border-right: 1px solid #00E5FF; }
-        
-        /* כותרות בתכלת טכנולוגי */
         h1, h2, h3 { color: #00E5FF !important; }
         p, span, div { color: #8AB4F8 !important; }
-        
-        /* אלמנטים של UI */
         .st-expander, div[data-testid="stExpander"] { border: 1px solid #00E5FF !important; background-color: #0a1122 !important; }
         hr { border-bottom-color: #00E5FF !important; opacity: 0.2; }
         .stTextInput input { border: 1px solid #00E5FF !important; color: #00E5FF !important; background-color: #060B19 !important; }
     </style>
     """
 
-# הזרקת ה-CSS לתוך האפליקציה בפועל
 st.markdown(theme_css, unsafe_allow_html=True)
-# ==========================================
 
 # ==========================================
-# 📊 מנוע צביעת נתונים לטבלאות (Pandas Styler)
+# 📊 מנוע צביעת נתונים לטבלאות
 # ==========================================
 def apply_table_theme(df, theme):
-    """
-    מקבל את נתוני הטבלה ואת העיצוב הנבחר,
-    ומזריק צבעים ישירות לתאים.
-    """
     if theme == "Cyber-Hacker 💻":
         bg_color, text_color, border = '#050505', '#00FF41', '#00FF41'
     elif theme == "Synthwave 👾":
-        # רקע סגול כהה, טקסט תכלת זוהר
         bg_color, text_color, border = '#120424', '#01CDFE', '#B967FF'
-    else: # Space Command
-        # כחול עמוק, טקסט תכלת חיוור
+    else: 
         bg_color, text_color, border = '#0B1426', '#8AB4F8', '#1c2b4a'
         
     return df.style.set_properties(**{
@@ -112,7 +84,6 @@ def apply_table_theme(df, theme):
         'border-color': border,
         'font-family': 'monospace' if theme == "Cyber-Hacker 💻" else 'sans-serif'
     })
-
 # --- מערכת אבטחה (שומר סף) ---
 def check_password():
     """מחזיר True אם המשתמש הזין את הסיסמה הנכונה."""
@@ -138,7 +109,7 @@ def check_password():
 # אם הסיסמה לא נכונה, המערכת פשוט תעצור כאן ולא תטען את הנתונים
 if not check_password():
     st.stop()
-
+    
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
@@ -232,6 +203,7 @@ with st.expander("📖 מדריך קריאה למשתמש (Cheat Sheet) - לחץ
 
     <p><b>מילון תבניות ומדדים (Badges & Metrics):</b></p>
     <ul>
+        <li><b>💧 PP (30d):</b> כמה פעמים המניה ביצעה "Pocket Pivot" (קנייה מוסדית שקטה) ב-30 הימים האחרונים.</li>
         <li><b>👑 True VCP:</b> הגביע הקדוש! התכווצות תנודתיות + התייבשות מחזורים לפי חוקי מארק מינרוויני.</li>
         <li><b>EP 🚀:</b> Episodic Pivot. המניה פתחה ב"גאפ" (פער) של למעלה מ-10% בעקבות אירוע/דוחות.</li>
         <li><b>Gap 📈:</b> קפיצת מחיר סטנדרטית של 4% ומעלה בפתיחה.</li>
@@ -266,13 +238,13 @@ possible_general = [
     'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
     'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
     'Pattern_Badges', 'Weinstein_Stage', 'Earnings_Date', 'Action_Score',
-    'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M'
+    'Market_Cap_B', 'ATR', 'ADR_Pct', 'Perf.1M', 'PP_30d'
 ]
 
 default_general = [
     'TV_Link', 'Price', 'Rel_Volume', 'Kinetic_Slope', 'RS Rating', 
     'Industry Group Rank', 'Industry Group Name', 'SMA20_Pct', 'SMA50_Pct', 
-    'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date'
+    'Weinstein_Stage', 'Pattern_Badges', 'Earnings_Date', 'PP_30d'
 ]
 
 available_general = [c for c in possible_general if c in df_filtered.columns]
@@ -293,19 +265,19 @@ else:
     strike_zone_df = df_filtered[disp_cols]
 
 # ==============================================================
-# התיקון: הגדרת רשימת העמודות המספריות לפני הלולאה
+# רשימת העמודות המספריות
 # ==============================================================
 numeric_cols_to_clean = [
     'Price', 'Rel_Volume', 'Action_Score', 'SMA20_Pct', 'SMA50_Pct', 
     'Kinetic_Slope', 'ATR', 'ADR_Pct', 'Perf.1M', 'Market_Cap_B', 
-    'Industry Group Rank', 'RS Rating', 'Comp. Rating', 'EPS Rating'
+    'Industry Group Rank', 'RS Rating', 'Comp. Rating', 'EPS Rating', 'PP_30d'
 ]
 
 for col in numeric_cols_to_clean:
     if col in strike_zone_df.columns:
         strike_zone_df[col] = pd.to_numeric(strike_zone_df[col], errors='coerce')
 
-# --- הצגת הטבלה צבועה לפי העיצוב ---
+# --- הצגת הטבלה ---
 styled_df = apply_table_theme(strike_zone_df, selected_theme)
 
 st.dataframe(
@@ -338,10 +310,10 @@ st.dataframe(
         "SMR Rating": st.column_config.TextColumn("SMR"),
         "Spon Rating": st.column_config.TextColumn("SPON"),
         "Ind Grp RS": st.column_config.TextColumn("GRP RS"),
+        "PP_30d": st.column_config.NumberColumn("PP (30d) 💧", format="%d"),
     }
 )
 
-# === מיקום נכון של כפתור הייצוא בסיידבר ===
 st.sidebar.markdown("---")
 st.sidebar.header("📤 EXPORT DATA")
 
@@ -356,7 +328,6 @@ if not strike_zone_df.empty:
 else:
     st.sidebar.warning("אין נתונים לייצוא (לוח ריק)")
 
-# --- הדיסקליימר וזכויות יוצרים בסיידבר ---
 st.sidebar.markdown("<br><br>" * 5, unsafe_allow_html=True)
 st.sidebar.markdown("---")
 st.sidebar.info("""
@@ -425,14 +396,9 @@ if not df_filtered.empty and 'Rank_Improvement' in df_filtered.columns:
         if 'RS Rating' in exist_cols: 
             sort_cols.append('RS Rating')
         
-        # --- שלב העיצוב המשלים ---
-        # 1. מכינים את ה-DataFrame המסונן והממוין
         momentum_display_df = j_df[exist_cols].sort_values(sort_cols, ascending=False)
-        
-        # 2. מעבירים אותו דרך מנוע העיצוב שבנינו (מזריקים את הצבעים של העיצוב הנבחר)
         styled_momentum = apply_table_theme(momentum_display_df, selected_theme)
         
-        # 3. מציגים את הטבלה המעוצבת
         st.dataframe(
             styled_momentum, 
             use_container_width=True, 
