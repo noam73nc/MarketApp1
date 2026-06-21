@@ -1,5 +1,5 @@
 {
-    "last_updated": "2026-06-21T12:02:19.506306",
+    "last_updated": "2026-06-21T13:48:24.306154",
     "status": "success",
     "error_message": "",
     "total_stocks_processed": 4386,
@@ -41,11 +41,9 @@
         "52W_Low_Pct",
         "Weinstein_Stage",
         "RS Rating",
-        "Comp. Rating",
         "EPS Rating",
         "Acc/Dis Rating",
         "SMR Rating",
-        "Spon Rating",
         "Ind Grp RS",
         "Industry Group Rank",
         "Rank_Improvement",
