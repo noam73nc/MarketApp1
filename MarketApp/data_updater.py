@@ -283,7 +283,10 @@ def update_market_data():
         # =======================================================
         if 'Action_Score' not in df_raw.columns:
             print("💡 מחשב Action Score דינמי (לא נמצא קובץ אקסל)...")
-            base_score = 0
+            
+            # אתחול base_score כסדרה של אפסים באורך של ה-DataFrame
+            base_score = pd.Series(0, index=df_raw.index)
+            
             if 'RS Rating' in df_raw.columns:
                 base_score = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
             
@@ -302,7 +305,12 @@ def update_market_data():
         
         df_raw['PP_30d'] = 0 
         df_raw['VBO_30d'] = 0
-        df_raw['RS_Num'] = pd.to_numeric(df_raw.get('RS Rating', 0), errors='coerce').fillna(0)
+        
+        # חילוץ בטוח של ה-RS Rating כדי לא לקרוס על fillna
+        if 'RS Rating' in df_raw.columns:
+            df_raw['RS_Num'] = pd.to_numeric(df_raw['RS Rating'], errors='coerce').fillna(0)
+        else:
+            df_raw['RS_Num'] = 0
             
         analysis_candidates = df_raw[
             (df_raw['RS_Num'] >= 70) & 
@@ -334,7 +342,6 @@ def update_market_data():
                 print(f"   📥 מוריד ומעבד קבוצה {current_batch} מתוך {total_batches}...")
                 
                 try:
-                    # שימוש ב-6mo ל-6 חודשים מלאים וקבוצתי (group_by)
                     hist_data = yf.download(batch_tickers, period="6mo", group_by='ticker', auto_adjust=True, progress=False)
                     
                     if hist_data.empty:
@@ -346,22 +353,22 @@ def update_market_data():
                             if len(batch_tickers) == 1:
                                 df_ticker = hist_data.dropna(subset=['Close']).copy()
                             else:
-                                if ticker not in hist_data: continue 
+                                if ticker not in hist_data:
+                                    continue 
                                 df_ticker = hist_data[ticker].dropna(subset=['Close']).copy()
                                 
                             if df_ticker.empty or len(df_ticker) < 50:
                                 continue
 
-                            # חישובי בסיס
                             df_ticker['SMA50'] = df_ticker['Close'].rolling(window=50).mean()
                             is_green = df_ticker['Close'] > df_ticker['Open']
                             above_sma50 = df_ticker['Close'] > df_ticker['SMA50']
                             
-                            # 1. חישוב PP (Pocket Pivot) - שימוש במקסימום של נרות אדומים בלבד
+                            # 1. חישוב PP (Pocket Pivot) 
                             down_volume = df_ticker['Volume'].where(df_ticker['Close'] < df_ticker['Open'], 0)
                             pp_threshold = down_volume.rolling(window=10).max().shift(1)
                             
-                            # 2. חישוב VBO (Volume Breakout) - שימוש במקסימום המוחלט מכל הנרות (ירוקים ואדומים)
+                            # 2. חישוב VBO (Volume Breakout) 
                             vbo_threshold = df_ticker['Volume'].rolling(window=10).max().shift(1)
                             
                             is_pp = is_green & above_sma50 & (df_ticker['Volume'] > pp_threshold)
@@ -371,7 +378,7 @@ def update_market_data():
                             vbo_results[ticker] = int(is_vbo.rolling(window=30).sum().fillna(0).iloc[-1])
                             success_count += 1
                             
-                            # 3. חישוב VCP (רק למועמדות המחמירות)
+                            # 3. חישוב VCP 
                             if ticker in vcp_strict_list:
                                 if is_true_vcp(df_ticker):
                                     true_vcp_tickers.append(ticker)
@@ -384,7 +391,6 @@ def update_market_data():
                     
             print(f"\n✅ מנוע היסטוריה סיים! חושבו מדדי PP/VBO בהצלחה עבור {success_count} מניות.")
             
-            # הצבה לתוך הטבלה הראשית
             if pp_results:
                 df_raw['PP_30d'] = df_raw['Symbol'].map(pp_results).fillna(0).astype(int)
             if vbo_results:
