@@ -1,200 +1,143 @@
-Rank this Wk,3 Wks ago,6 Wks ago,Industry Group Name,Group Composite Rating,YTD % Change,Day's % Change
-1,1,1,  Telcom-Fibr Optcs,90,139,4.1
-2,2,2,  Comptr-Data Strge,95,135,3.2
-3,5,3,  Elec-Semicndctr Eqp,91,76.7,4.1
-4,22,13,  Elec-Semicon Mfg,93,60.5,2.2
-5,6,12,  Oil&Gas-Field Servic,88,51.8,1.8
-6,8,14,  Elec-Parts,94,59.8,1.1
-7,3,4,  Oil&Gas-Drilling,83,35.8,1.7
-8,14,8,  Elec-Scntific/Msrng,91,44.9,1.2
-9,30,44,  Elec-Contract Mfg,97,51.5,4.1
-10,31,45,  Energy-Alt/Other,91,32.2,-0.4
-11,9,5,  Oil&Gascdn Expl Pro,..    ,43.1,-0.6
-12,11,37,  Dvrsified Oprtions,69,18.9,0
-13,10,31,  Transportation-Ship,91,36.2,0.6
-14,17,17,  Bldg-Heavy Constr,90,46.9,-0.5
-15,74,64,  Elec-Semicon Fblss,95,50.3,4.9
-16,4,16,  Oil&Gas-Intl Expl Pr,83,35.8,-1.5
-17,15,26,  Telcom-Cbl/Sat Eqp,92,36.6,2.5
-18,13,6,  Mining-Gld/Silvr/Gms,96,16.1,1.1
-19,41,51,  Trnsportation-Trck,81,33.7,-0.1
-20,26,9,  Mchinry-Cnstr/Mng,90,41.7,-0.5
-21,18,18,  Oil&Gas-Mchnry/Eq,90,22,2.5
-22,16,25,  Medical-Biomed/Bth,77,4.4,-0.5
-23,20,77,  Chemicals-Basic,85,30.1,0.1
-24,42,10,  Med-Long-Trm Care,95,13.3,0.7
-25,29,20,  Electrical Power/Eqpmt,93,40.9,-0.2
-26,36,29,  Telcom-Infrastr,95,58.1,-0.5
-27,32,11,  Mining-Metal Ores,84,21.4,-0.2
-28,47,43,  Steel-Producers,88,31.2,0.9
-29,27,32,  Telcom Svc-Wirles,79,14,-1.4
-30,28,19,  Trnsprt-Air Freight,..    ,26.8,-1
-31,7,24,  Oil&Gas Integrated,85,26.7,-1
-32,23,15,  Chemicals-Ag,89,29.5,0.2
-33,34,23,  Bldg-A/C & Heating P,88,41,0
-34,24,27,  Oil&Gas-U S Expl Pro,83,20.3,-0.9
-35,25,38,  Oil&Gas-Trnsprt/Pip,85,21.4,0.6
-36,43,48,  Retail-Spr/Mini Mkts,78,30.2,0.2
-37,21,7,  Oil&Gas-Royalty Trust,..    ,41.2,-0.2
-38,35,78,  Chemicals-Specialty,81,13.6,0.7
-39,40,35,  Transport-Logistics,84,19.1,-0.3
-40,19,21,  Oil&Gas-Rfing/Mkt,82,31.8,0.5
-41,55,41,  Trucks & Parts-Hvy D,81,25.6,0.1
-42,44,85,  Chemicals-Plastics,..    ,26,1
-43,50,101,  Leisure-Services,76,8.5,-0.1
-44,46,28,  Metal Proc & Fabrica,90,24.7,0.8
-45,37,40,  Telecom Svcs-Foreign,87,4.9,-0.8
-46,45,33,  Retail-Mjr Dsc Chns,79,19.9,-0.5
-47,57,67,  Auto/Trck-Tirs & M,..    ,25.4,0.6
-48,60,84,  Leisure-Lodging,79,16.1,0
-49,56,47,  Bldg-Mntnance & S,91,38.2,0.2
-50,58,59,  Media-Newspapers,69,10.2,0.5
-51,12,36,  Agricultural Oprtions,71,22.3,-0.2
-52,33,22,  Aerospace/Defense,87,7.3,-1.6
-53,38,87,  Retail-Drug Stores,..    ,-0.4,-0.4
-54,51,58,  Trnsprt-Eqp Mfg,90,21.1,-0.3
-55,73,72,  Auto/Trck-Orgnl Eqp,82,15.4,1
-56,95,124,  Leisre-Mvies & Rel,81,5,-0.1
-57,78,53,  Fin-Publ Inv Fd-Gl,..    ,9.7,1
-58,39,34,  Medical-Ethical Drgs,81,0.9,-0.8
-59,64,86,  Banks-Northeast,92,8.8,-1.1
-60,68,52,  Mchnry-Gen Indstrl,89,14.8,-0.1
-61,54,49,  Banks-Foreign,88,6.3,-0.3
-62,65,56,  Wholesale-Food,75,15.2,0.3
-63,62,71,  Financ-Svings & Lo,88,8.3,-0.2
-64,142,74,  Media-Radio/Tv,..    ,1.2,-1.1
-65,49,42,  Bev-Non-Alcoholic,78,6.9,1.1
-66,109,114,  Compter-Netwrking,86,18.2,2
-67,88,134,  Media-Books,..    ,34.3,-1.4
-68,119,81,  Transportation-Rail,80,14.6,-0.5
-69,79,97,  Banks-Southeast,88,-0.4,-1.6
-70,98,65,  Elec-Misc Products,..    ,15.1,2.7
-71,84,99,  Medical-Products,79,-6.3,-0.5
-72,76,110,  Steel-Spclty Alloys,..    ,6.5,3.6
-73,69,46,  Leisr-Tys/Gms/Hbby,..    ,11.3,-2.3
-74,132,105,  Metal Prds-Distribtr,..    ,15.4,2.5
-75,67,104,  Retail-Apprl/Shoes/Acc,78,-0.9,0.3
-76,70,73,  Finance-Property Reit,..    ,10.8,-0.2
-77,48,39,  Telcom-Svc-Cbl/Sat,..    ,9.6,-6.9
-78,90,117,  Banks-Money Cntr,83,4.5,-0.3
-79,104,122,  Banks-Supr Rgional,81,7.6,-1.9
-80,117,153,  Wholesale-Elect,..    ,16.4,1.2
-81,72,83,  Banks-Midwest,88,9,-0.3
-82,59,106,  Utility-Elctric Pwr,76,7.6,0.8
-83,103,130,  Food-Misc Prep,77,3.2,5.6
-84,89,70,  Apprel-Clthing Mfg,89,10.7,-0.8
-85,81,111,  Banks-Wst/Sthwst,86,6.5,-1.2
-86,80,96,  Machnry-Tools & Re,81,11.1,-1.1
-87,75,95,  Financial Svc-Spec,77,-0.8,-0.3
-88,53,66,  Retail-Discnt&Vari,66,-0.4,-0.6
-89,61,68,  Food-Grain & Related,..    ,16.8,-0.6
-90,140,143,  Apparel-Shoes & Rel,77,4.7,-0.7
-91,85,79,  Insrnce-Prp/Cas/Titl,81,-3.8,-0.9
-92,145,144,  Finance-Cons Loan,80,6.5,-0.1
-93,92,69,  Bldg-Hand Tools,..    ,10.5,-2.3
-94,171,161,  Comml Svcs-Leasing,80,17.4,-0.2
-95,127,132,  Funeral Svcs & Rel,..    ,14,1.3
-96,101,102,  Finance-Etf/Etn,..    ,5.2,0.5
-97,113,115,  Finance-Mrtg-Reit,69,4,0.9
-98,110,150,  Consumr Prod-Speci,..    ,12.1,2.3
-99,63,54,  Energy Coal,..    ,-2.7,-2.2
-100,136,137,  Medical-Systems/Eqp,80,-11.3,0.4
-101,66,62,  Utility-Gas Dstribtn,77,12.5,-0.8
-102,146,157,  Cmp-Hrdwre/Perip,..    ,31.1,1.2
-103,118,108,  Telcom-Cons Prod,90,10.3,-0.3
-104,82,92,  Pollution Control,82,2.7,-1.2
-105,86,50,  Medical-Diversified,81,-15.5,-2.6
-106,105,93,  Beverages-Alcoholic,53,11.5,-0.8
-107,93,107,  Retail/Whlsle-Jwlry,..    ,31.7,-1.6
-108,116,109,  Financ-Pbl Inv Fdeqt,..    ,3.5,0.3
-109,154,181,  Fin-Invest Bnk/Bkrs,79,7.2,0
-110,135,128,  Houshld-Applncs/Hw,73,-2.4,0.3
-111,126,125,  Insrnce-Divrsified,82,-3.5,-0.8
-112,99,82,  Comml Svc-Outsourci,64,-6.4,0.1
-113,143,145,  Insurance-Life,81,1.6,0.2
-114,83,75,  Office Supplies Mfg,..    ,-0.8,-1.3
-115,87,118,  Real State Dvlpmt/Ops,72,-6.4,0.8
-116,77,57,  Machinery-Farm,..    ,12.1,-3.7
-117,91,98,  Utility-Water Supply,81,5.6,-1.5
-118,124,119,  Comml Svc-Doc Mgmt,..    ,69.4,0.2
-119,71,61,  Utility-Diversified,73,7.6,-0.1
-120,138,155,  Intrnt-Netwk Sltns,..    ,14.5,1.3
-121,102,80,  Mdcal-Outpnt/Hm Cr,77,5.9,-0.1
-122,130,129,  Bldg-Cnstr Prds/Msc,76,5.9,-0.5
-123,123,149,  Internet-Content,85,0.4,1.9
-124,153,172,  Comml Svcs-Hlthcre,..    ,-3.5,1
-125,144,136,  Comptr Sftwr-Entr,64,-17.9,1.2
-126,152,148,  Medical Supplies,76,0.3,-1.1
-127,97,88,  Telcom Svc-Integrtd,..    ,-4.3,-16
-128,129,91,  Coml Svcs-Advrtsng,67,1.2,0.5
-129,139,152,  Security/Sfty,74,-9.8,0.4
-130,121,116,  Finance-Blank Check,50,-1,0.3
-131,96,90,  Containers/Packaging,54,-1.2,-0.9
-132,125,112,  Cosmetics/Persnl Cre,..    ,-6.4,0.8
-133,112,121,  Leisure-Products,72,3.7,-0.2
-134,120,113,  Retail-Restaurants,68,-2,0.3
-135,52,30,  Mdcal-Whlsle Drg,..    ,-1.6,-1.2
-136,141,142,  Mchnry-Mtl Hdlg,..    ,-0.9,1.3
-137,94,89,  Medical-Services,78,-13.8,1.1
-138,111,103,  Fnce-Invsmnt Mgt,76,-4,-0.4
-139,150,156,  Bldg-Cment/Cncrt,77,2.7,-0.2
-140,156,154,  Insrnce-Acc & Heal,..    ,-0.7,0.1
-141,151,159,  Leisre-Gamng/Equip,77,-2.7,0.1
-142,122,133,  Fince-Pub Inv Fd-Bl,..    ,0.9,-0.6
-143,159,164,  Media-Diversified,..    ,-3.6,-2
-144,107,170,  Consumr Svc-Edcation,70,5.8,-0.9
-145,108,76,  Food-Confectionery,..    ,3.7,-0.8
-146,185,190,  Food-Dairy Products,..    ,12.3,2.8
-147,128,151,  Food-Meat Products,..    ,-6.2,-0.5
-148,157,147,  Cmml Svcs-Cnsltng,66,-10.8,0
-149,163,123,  Retail-Specialty,63,-5.4,-0.6
-150,115,94,  Cmpter-Tech Srvcs,72,-16.2,-0.1
-151,131,63,  Medical-Generc Drgs,74,-0.5,0.7
-152,134,126,  Fnancepbl Inv Fdbnd,..    ,-1.3,0
-153,160,163,  Fin-Mrtg&Rel Svc,78,-6.9,0.3
-154,106,127,  Trnsprttin-Airlne,..    ,-9.9,0
-155,149,131,  Tobacco,..    ,-6,-0.3
-156,169,169,  Retail-Internet,71,-6.7,1.1
-157,100,100,  Food-Packaged,64,-0.4,0.2
-158,180,186,  Retail/Whlsle-Auto,69,-6,0.5
-159,190,189,  Leisre-Trvl Bking,..    ,-12.7,1
-160,148,141,  Hsholdoffic Furnitr,..    ,-2.1,0.3
-161,182,182,  Med-Managed Care,..    ,-0.4,-0.2
-162,162,158,  Chemicals-Paints,..    ,3.4,-0.2
-163,173,174,  Finance-Card/Pmtpr,68,-8.2,-0.4
-164,178,175,  Bldg-Rsidnt/Comml,..    ,-7.8,-2.3
-165,176,162,  Retail-Leisure Prds,59,1.8,0.5
-166,177,176,  Consumer Prod-Elec,..    ,-7.2,-0.3
-167,179,168,  Rtail-Hme Frnshngs,..    ,-7.6,-0.4
-168,175,180,  Comml Svcs-Stffng,..    ,-8.5,0
-169,161,140,  Paper & Paper Produc,..    ,-3.5,-1.2
-170,164,135,  Retail-Dprtmnt Strs,..    ,-3,-1.4
-171,166,167,  Bldg-Wood Prds,..    ,4.3,-0.3
-172,155,179,  Finance-Cmrcl Loan,..    ,-11.6,-2.4
-173,147,120,  Soap & Clng Preparat,..    ,4.1,-0.2
-174,158,139,  Media-Periodicals,..    ,-6.4,-0.2
-175,186,184,  Compter Sftwr-Dsgn,67,-5.3,5.9
-176,174,165,  Retail/Wsl-Auto Prt,..    ,3.5,-0.5
-177,172,166,  Retl Whsle Bldg Prds,..    ,0,-0.7
-178,114,146,  Bldg-Mbile/Mfg & Rv,..    ,-8.8,0.2
-179,181,171,  Cmp Sftwr-Gaming,..    ,-15.3,0.4
-180,167,183,  Rtail Whlsle Offc Sup,..    ,-3.1,-3.1
-181,133,60,  Medcal-Hospitals,..    ,-13.3,-5.5
-182,170,173,  Retail-Cnsmr Elec,..    ,-1.7,-1.1
-183,137,55,  Energy Solar,..    ,-10.1,-1.9
-184,184,185,  Insurance-Brokers,..    ,-14.6,-2.1
-185,165,138,  Auto Manufacturers,..    ,-16.4,-0.4
-186,187,191,  Cmml Svcs-Mrkt Rch,..    ,-21.1,-0.1
-187,188,177,  Comptr Sftwr-Scrity,54,-14.6,0.5
-188,183,178,  Cmptr-Intgrtd Syst,..    ,-19.7,1.8
-189,168,160,  Med-Resrch Eqp/Svc,..    ,-18.7,1.6
-190,189,187,  Comptr Sftwr-Fincl,60,-35.8,2.3
-191,191,188,  Auto/Trck-Rplc Prts,..    ,-6.8,1.1
-192,192,193,  Cmptr Sftwr-Edu,..    ,-36.4,0.7
-193,194,195,  Comptr Sftwr-Dsktp,..    ,-20.6,2.6
-194,195,192,  Cmp Sftwr-Spc-Entr,68,-33.5,2
-195,197,197,  Retail-Mail Order&Di,..    ,-62.9,-1.9
-196,193,194,  Cmp Sftwr-Dbase,58,-26.4,0.5
-197,196,196,  Comptr Sftwr-Mdcl,..    ,-24.7,2.5
-0,0,0,  S & P Midcap 400 Ind,..    ,10.2,0.2
-0,0,0,  S & P 500 Index,..    ,4.7,0.8
+﻿Rank this Wk,3 Wks ago,6 Wks ago,Industry Group Name,Group Composite Rating,YTD % Change,Day's % Change
+1,1,1,  Compsftwr-Hrdwr,94,264,7
+2,9,7,  Elec-Semiequip,94,103,5
+3,2,19,  Electronic-Parts,95,72,2
+4,3,4,  Elec-Semic/Mfg,92,79,7
+5,14,13,  Internet-Netwksol,91,52,2
+6,19,9,  Elec-Miscprods,89,62,8
+7,15,5,  Elec-Sci/Msrng,93,71,3
+8,6,41,  Compsftwr-Netwrk,92,50,2
+9,7,6,  Telecm-Intrastrc,75,78,-3
+10,13,76,  Compsftwr-Secur,77,43,1
+11,17,77,  Commsvc-Staffng,74,20,3
+12,5,2,  Elec-Contract Mfg,96,77,1
+13,37,15,  Mach-Cons/Min/Frm,84,43,2
+14,16,22,  Elec-Semicfablss,95,31,4
+15,26,36,  Commsvcs-Leasing,83,26,3
+16,22,21,  Metalprds-Dist/Fab,93,37,0
+17,20,11,  Steel-Specalloy,92,61,0
+18,33,10,  Energy-Alt/Other,82,41,6
+19,4,20,  Trnsport-Truck,74,49,1
+20,24,12,  Electrcl-Powreqp,92,37,4
+21,30,51,  Leisure-Lodging,82,19,0
+22,12,27,  Machn-Metal,82,26,2
+23,27,38,  Med-Mngdcare,80,22,0
+24,23,8,  Bldg-Heavyconst,86,39,1
+25,36,122,  Retail-Homfurn,69,22,2
+26,45,18,  Trucks&Prts-Hvydut,78,27,0
+27,74,60,  Banks-Monycntr,93,11,0
+28,59,34,  Trnsport-Eqpmanu,91,26,1
+29,63,49,  Bldg-Constrprods,85,17,3
+30,82,105,  Hsehold/Applianc,92,11,4
+31,10,3,  Telecom-Equip,79,107,-2
+32,47,92,  Trnsport-Airline,89,3,2
+33,21,55,  Trnsport-Airfrght,87,28,0
+34,76,52,  Building-Tools,80,21,1
+35,18,23,  Mining-Metalores,73,34,-1
+36,61,17,  Oil&Gas-Shipping,91,43,1
+37,11,14,  Steel-Producers,85,26,-4
+38,67,110,  Finance-Consmloan,89,0,2
+39,58,86,  Medical-Svcs,70,6,2
+40,49,56,  Banks-S&Ls,89,17,1
+41,51,16,  Trnsport-Ship,86,33,0
+42,53,47,  Chemicals-Specialty,80,19,0
+43,65,65,  Retail-Apprl/Shoe,75,8,1
+44,8,91,  Energy-Solar,85,11,3
+45,32,54,  Telecm-Cnsmrprds,81,7,1
+46,29,48,  Telecmsvcs-Forgn,70,14,1
+47,38,53,  Auto/Truck Parts,76,10,1
+48,90,89,  Food-Wholesale,82,13,0
+49,56,46,  Reits,73,13,0
+50,48,32,  Med-Devicebio,68,12,1
+51,50,39,  Beverage-Alcohol,65,14,1
+52,72,69,  Leisure-Products,77,8,3
+53,66,64,  Beverage-Non-Alcohol,80,13,0
+54,81,63,  Banks-Super Regional,86,7,0
+55,28,31,  Oil&Gas-Refin/Mktg,63,35,-1
+56,41,37,  Cannabis,71,-5,3
+57,106,85,  Leisure-Services,82,-3,2
+58,68,57,  Oil&Gas-Pipeline,67,15,0
+59,87,102,  Retail-Specialty,81,7,3
+60,55,50,  Trnsport-Rail,75,11,0
+61,70,59,  Banks-Regional,87,9,-1
+62,25,29,  Energy-Coal,73,26,-2
+63,34,40,  Finance-Crypto,71,14,1
+64,42,30,  Internet-Content,79,4,1
+65,75,99,  Busines Equipsupplies,75,6,1
+66,39,62,  Compsftwr-Databs,73,-4,0
+67,71,68,  Tobacco,59,9,0
+68,80,73,  Diversoperatns,70,3,0
+69,97,117,  Retail-Leisure,71,2,3
+70,105,74,  Banks-Foreign,84,0,0
+71,98,72,  Utilities,71,8,0
+72,113,81,  Machn-Genindus,86,4,2
+73,64,66,  Consum-Electrncs,56,14,1
+74,54,44,  Agriculturalops,50,20,0
+75,134,113,  Finance-Invbnk,79,-6,0
+76,83,98,  Aerospc/Defnse,84,4,-1
+77,122,128,  Bldg-Residential/Comml,78,1,3
+78,108,101,  Containrs/Packg,74,1,1
+79,40,26,  Oil&Gas-Mach/Eqp,74,30,-2
+80,43,33,  Retail-Internet,83,-1,2
+81,104,87,  Bldg-Cement/Concrt/Ag,84,-4,2
+82,103,79,  Finance-Invmgmt,77,-8,-1
+83,115,80,  Insurance,79,-4,0
+84,96,100,  Cosmetics/Perscare,67,0,1
+85,89,82,  Med-Homenurs,77,3,1
+86,110,127,  Apparel-Clothng/Shoe,77,-14,2
+87,60,35,  Chemicals-Basic,70,19,-2
+88,35,24,  Oil&Gas-Drilling,60,41,-4
+89,69,67,  Trnsport-Logistcs,70,7,-1
+90,62,45,  Oil&Gas-Integratd,61,20,-2
+91,77,84,  Medical-Pharma,64,-1,-2
+92,79,42,  Oil&Gas-Explo/Prodc,55,18,-2
+93,31,25,  Oil&Gas-Fieldsvcs,66,29,-3
+94,88,123,  Security/Safety,78,-5,1
+95,102,104,  Commsvcs-Advertising,66,-12,-2
+96,124,125,  Finance-Crdcard,80,-14,0
+97,91,88,  Food-Packagd,62,0,0
+98,117,95,  Med-Revenubio,65,-4,0
+99,95,129,  Commsvc-Outsrcng,66,-10,0
+100,121,114,  Paper&Paprprods,61,-5,0
+101,44,28,  Chemicals-Plastics,71,24,-2
+102,73,58,  Oil&Gas-Royaltrust,49,24,0
+103,128,120,  Hsehold/Offcfurn,96,-13,2
+104,125,121,  Leisure-Trvlbook,79,-20,0
+105,129,132,  Retail-Wholebldg,72,-6,2
+106,126,112,  Retail-Restaurnts,74,-3,0
+107,93,139,  Compsftwr-Ed/Media,54,-19,3
+108,120,107,  Finance-Comloan,..    ,-10,1
+109,94,61,  Retail-General,58,6,-1
+110,52,43,  Chem-Agriculture,56,10,-2
+111,118,131,  Leisure/Gamingeqp,70,-19,0
+112,133,124,  Pollutioncntrl,71,-6,0
+113,99,90,  Med-Proftbio,71,0,-1
+114,57,106,  Automakers,66,-6,1
+115,85,78,  Food-Foodstuffs,86,-3,-1
+116,114,130,  Consum-Spec,76,-3,0
+117,135,137,  Compsftwr-Gaming,62,-19,1
+118,78,103,  Retail-Wholesauto,59,-12,4
+119,46,111,  Compsftwr-Spcent,67,-26,-2
+120,123,83,  Retail-Supermkts,58,-2,-2
+121,111,94,  Media,56,-15,1
+122,119,75,  Consum-Eductn,61,-5,-1
+123,112,134,  Med-Research,56,-19,1
+124,131,126,  Medical-Systms,67,-16,2
+125,86,93,  Telecm-Cablesvc,63,-4,-1
+126,100,97,  Financesvc-Spec,70,-7,-1
+127,116,70,  Realestdevel/Ops,76,-5,-1
+128,92,96,  Compsftwr-Desgn,69,-20,0
+129,130,118,  Finance-Mortg,65,-24,2
+130,109,108,  Commsvcs-Consult,62,-9,-2
+131,136,138,  Med-Distributn,60,-9,-3
+132,84,119,  Compsftwr-Enterprise,62,-21,0
+133,101,71,  Mining-Gold/Silvr,63,-4,-2
+134,127,116,  Leisure-Movies,81,-15,1
+135,140,142,  Medical-Prods,61,-22,1
+136,138,109,  Retail-Autoparts,62,-9,0
+137,139,115,  Bllg-Maint/Svc,74,-17,1
+138,107,140,  Compsftwr-Techsvc,67,-25,-5
+139,132,136,  Compsftwr-Med,68,-31,0
+140,142,133,  Med-Hospitals,48,-21,-3
+141,137,135,  Commsvc-Mktrsrch,46,-31,-2
+142,141,141,  Compsftwr-Financial,49,-50,1
