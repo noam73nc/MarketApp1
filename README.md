@@ -22,7 +22,7 @@ The `app.py` dashboard reads the pre-processed `.pkl` files. This allows the app
 
 * **Advanced Filtering:** Filter the market by RS Rating, Dollar Volume, Market Cap, and proprietary Action Scores.
 * **Live Pattern Engine:** Automatically detects structural setups (U&R, HVC, VCP, Squat, Stage 2 Advancing) based on live price action.
-* **Macro Sector Velocity:** Tracks institutional money flow by analyzing IBD's Top 40 Industry Groups and identifying momentum stocks in jumping sectors.
+* **Macro Sector Velocity:** Tracks institutional money flow by analyzing Top 40 Industry Groups and identifying momentum stocks in jumping sectors.
 * **Interactive Charting:** Built-in TradingView Lightweight Charts displaying candlestick data, volume histograms, and key moving averages (21, 50, 200).
 * **One-Click Export:** Download the filtered "Strike Zone" directly to an Excel file with hyperlinked tickers.
 
