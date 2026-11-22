@@ -1,6 +1,6 @@
 # 📟 Hybrid Command Center
 
-A professional, automated stock market analysis dashboard integrating TradingView data, IBD ratings, and custom trading algorithms (CAN SLIM & Swing Trading methodologies).
+A professional, automated stock market analysis dashboard, and custom trading algorithms .
 
 
 
@@ -37,4 +37,4 @@ Users can pull the latest data from the server instantly by clicking the "📡 R
 ⚠️ Disclaimer
 For informational purposes only. This is not financial advice or a recommendation to buy/sell securities. Data is aggregated from third-party sources. The user assumes full responsibility for all trading decisions.
 
-© All rights reserved Noam73nc
+ Noam73nc
