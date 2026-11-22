@@ -168,7 +168,7 @@ with st.sidebar:
     st.header("📊  DATA SELECTION")
     ibd_options = ['Comp. Rating', 'EPS Rating', 'Acc/Dis Rating', 'SMR Rating', 'Spon Rating', 'Ind Grp RS']
     available_ibd = [c for c in ibd_options if c in df_raw.columns]
-    selected_ibd = st.multiselect("בחר נתוני :", available_ibd, default=[])
+    selected_ibd = st.multiselect("בחר נתונים :", available_ibd, default=[])
 
 df_filtered = df_raw.copy()
 if 'RS Rating' in df_filtered.columns:
