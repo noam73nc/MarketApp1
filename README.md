@@ -2,7 +2,7 @@
 
 A professional, automated stock market analysis dashboard integrating TradingView data, IBD ratings, and custom trading algorithms (CAN SLIM & Swing Trading methodologies).
 
-© All rights reserved Noam73nc
+
 
 ---
 
