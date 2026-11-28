@@ -1,5 +1,5 @@
 {
-    "last_updated": "2026-11-28T15:24:34.065152",
+    "last_updated": "2026-11-28T15:29:25.664219",
     "status": "success",
     "error_message": "",
     "total_stocks_processed": 4172,
@@ -48,9 +48,6 @@
         "Industry Group Rank",
         "Rank_Improvement",
         "Industry Group Name",
-        "Earnings_Date",
-        "Kinetic_Slope",
-        "VDU_Alert",
         "Action_Score",
         "PP_30d",
         "VBO_30d"
